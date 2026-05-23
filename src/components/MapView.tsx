@@ -47,11 +47,20 @@ export default function MapView({ sites, selectedId, onSelect }: Props) {
       }).addTo(map);
 
       mapRef.current = map;
+
+      // Force Leaflet to recalculate container size after layout settles
+      setTimeout(() => { if (!cancelled) map.invalidateSize(); }, 100);
+
+      // Also watch for container resize (e.g. side panel opening/closing)
+      const ro = new ResizeObserver(() => map.invalidateSize());
+      if (containerRef.current) ro.observe(containerRef.current);
+      (map as any)._resizeObserver = ro;
     });
 
     return () => {
       cancelled = true;
       if (mapRef.current) {
+        (mapRef.current as any)._resizeObserver?.disconnect();
         mapRef.current.remove();
         mapRef.current = null;
         LRef.current = null;
