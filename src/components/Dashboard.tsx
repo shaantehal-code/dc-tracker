@@ -172,7 +172,7 @@ export default function Dashboard({ initialSites }: Props) {
         </div>
 
         {/* Center: map / signals / ingest */}
-        <div className="flex-1 overflow-hidden">
+        <div className="flex-1 overflow-hidden relative">
           {rightTab === 'Map' && (
             <MapView sites={filtered} selectedId={selectedId} onSelect={setSelectedId} />
           )}

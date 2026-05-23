@@ -50,6 +50,7 @@ export default function MapView({ sites, selectedId, onSelect }: Props) {
 
       // Force Leaflet to recalculate container size after layout settles
       setTimeout(() => { if (!cancelled) map.invalidateSize(); }, 100);
+      setTimeout(() => { if (!cancelled) map.invalidateSize(); }, 500);
 
       // Also watch for container resize (e.g. side panel opening/closing)
       const ro = new ResizeObserver(() => map.invalidateSize());
@@ -120,5 +121,9 @@ export default function MapView({ sites, selectedId, onSelect }: Props) {
     }
   }, [selectedId, sites]);
 
-  return <div ref={containerRef} className="w-full h-full" />;
+  return (
+    <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+      <div ref={containerRef} style={{ position: 'absolute', inset: 0 }} />
+    </div>
+  );
 }
