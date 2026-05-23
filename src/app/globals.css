@@ -1,0 +1,40 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg: #0a0a0f;
+  --surface: #111118;
+  --border: #1e1e2e;
+  --text: #e2e8f0;
+  --muted: #64748b;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  margin: 0;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.leaflet-container { background: #0d0d14; }
+
+/* Leaflet popup dark theme */
+.leaflet-popup-content-wrapper {
+  background: #1a1a2e !important;
+  border: 1px solid #2d2d4e !important;
+  color: #e2e8f0 !important;
+  border-radius: 8px !important;
+}
+.leaflet-popup-tip { background: #1a1a2e !important; }
+.leaflet-popup-close-button { color: #94a3b8 !important; }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #334155; border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: #475569; }
