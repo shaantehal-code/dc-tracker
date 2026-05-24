@@ -9,6 +9,7 @@ import SiteList from './SiteList';
 import SiteDetail from './SiteDetail';
 import SignalFeed from './SignalFeed';
 import IngestPanel from './IngestPanel';
+import RemoteControlPanel from './RemoteControlPanel';
 
 const MapView = dynamic(() => import('./MapView'), { ssr: false });
 
@@ -30,7 +31,7 @@ const DEFAULT_FILTERS: FilterState = {
   sort: 'score',
 };
 
-const TABS = ['Map', 'Signals', 'Ingest'] as const;
+const TABS = ['Map', 'Signals', 'Ingest', 'Remote'] as const;
 type Tab = typeof TABS[number];
 
 export default function Dashboard({ initialSites }: Props) {
@@ -178,6 +179,7 @@ export default function Dashboard({ initialSites }: Props) {
           )}
           {rightTab === 'Signals' && <SignalFeed />}
           {rightTab === 'Ingest' && <IngestPanel />}
+          {rightTab === 'Remote' && <RemoteControlPanel />}
         </div>
 
         {/* Right panel: site detail */}
