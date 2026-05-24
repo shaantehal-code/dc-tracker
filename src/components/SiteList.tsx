@@ -87,6 +87,11 @@ export default function SiteList({ sites, selectedId, onSelect, onToggleWatchlis
               <span className="text-blue-500">{site.signals!.length} signal{site.signals!.length !== 1 ? 's' : ''}</span>
             )}
           </div>
+          {site.owner && (
+            <div className="mt-1 text-[10px] text-slate-600 truncate" title={site.owner}>
+              🏢 {site.owner.split('(')[0].trim()}
+            </div>
+          )}
         </div>
       ))}
     </div>

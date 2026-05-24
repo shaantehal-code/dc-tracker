@@ -59,6 +59,21 @@ export default function SiteDetail({ site, onClose, onToggleWatchlist, onSaveNot
           <Row label="Type" value={site.type.replace(/_/g,' ')} />
           <Row label="Status" value={site.status.replace(/_/g,' ')} />
           <Row label="Opportunity Score" value={<span className="font-bold text-lg" style={{color: site.opportunityScore>=80?'#22c55e':site.opportunityScore>=60?'#f59e0b':'#ef4444'}}>{site.opportunityScore}/100</span>} />
+          {site.owner && <Row label="Current Owner" value={<span className="text-right">{site.owner}</span>} />}
+          {site.forSaleProbability !== undefined && (
+            <div className="flex justify-between py-1.5 border-b border-[#1a1a2e] text-sm">
+              <span className="text-slate-500 shrink-0">For Sale Probability</span>
+              <div className="flex items-center gap-2 max-w-[60%]">
+                <div className="w-20 h-2 bg-[#1a1a2e] rounded-full overflow-hidden">
+                  <div className="h-full rounded-full transition-all" style={{
+                    width: `${site.forSaleProbability}%`,
+                    background: site.forSaleProbability >= 65 ? '#22c55e' : site.forSaleProbability >= 35 ? '#f59e0b' : '#ef4444'
+                  }} />
+                </div>
+                <span className="text-slate-200 font-medium">{site.forSaleProbability}%</span>
+              </div>
+            </div>
+          )}
           <Row label="Power Capacity" value={`${site.powerCapacityMW} MW`} />
           <Row label="Power Available" value={`${site.powerAvailableMW} MW`} />
           <Row label="Land" value={`${site.landAcres.toLocaleString()} acres`} />

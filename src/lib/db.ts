@@ -77,6 +77,10 @@ function initSchema(db: DatabaseSync) {
     CREATE INDEX IF NOT EXISTS idx_sites_region ON sites(region);
     CREATE INDEX IF NOT EXISTS idx_sites_country ON sites(country);
   `);
+
+  // Migrations for new columns (safe to run repeatedly — catches error if column exists)
+  try { db.exec(`ALTER TABLE sites ADD COLUMN owner TEXT DEFAULT ''`); } catch {}
+  try { db.exec(`ALTER TABLE sites ADD COLUMN for_sale_probability INTEGER DEFAULT 50`); } catch {}
 }
 
 // ── Site queries ─────────────────────────────────────────────────────
@@ -150,6 +154,8 @@ function mapSite(row: any) {
     askingPriceMUSD: row.asking_price_musd,
     notes: row.notes,
     tags: JSON.parse(row.tags || '[]'),
+    owner: row.owner || '',
+    forSaleProbability: row.for_sale_probability ?? 50,
     userNotes: row.user_notes,
     watchlisted: row.watchlisted === 1,
     lastUpdated: row.last_updated,

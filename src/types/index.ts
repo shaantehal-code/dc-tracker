@@ -40,6 +40,8 @@ export interface Site {
   askingPriceMUSD?: number;
   notes: string;
   tags: string[];
+  owner?: string;
+  forSaleProbability?: number;
   userNotes?: string;
   watchlisted?: boolean;
   signals?: Signal[];

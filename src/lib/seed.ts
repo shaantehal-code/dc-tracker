@@ -6,6 +6,7 @@ interface SiteRow {
   landAcres: number; fiberAccess: string; waterAccess: string;
   opportunityScore: number; region: string; country: string; state: string; city: string;
   powerCostPerMWh: number; pueEstimate: number; notes: string; tags: string[];
+  owner?: string; forSaleProbability?: number;
   signals: { type: string; date: string; desc: string; confidence: string }[];
 }
 
@@ -775,14 +776,254 @@ const SITES: SiteRow[] = [
     ]},
 ];
 
+// ── New sites (added with owner data) ────────────────────────────────
+const NEW_SITES: SiteRow[] = [
+  { id:'monarch-wv', name:'Monarch Campus, Moorefield WV', lat:38.9818, lng:-78.9626,
+    type:'greenfield', status:'under_construction', powerCapacityMW:3200, powerAvailableMW:3200, landAcres:2000,
+    fiberAccess:'single', waterAccess:'limited', opportunityScore:86,
+    region:'northeast', country:'US', state:'WV', city:'Moorefield',
+    powerCostPerMWh:42, pueEstimate:1.35,
+    owner:'American Intelligence Power (AIP)', forSaleProbability:30,
+    notes:'3.2 GW mega-campus backed by former US intelligence community officials. Appalachian Power territory — one of cheapest grid rates in eastern US. DoD/IC-focused tenant strategy. Remote location mitigates physical security risk. Hardy County offered major tax incentives. Announced late 2024, breaking ground 2025.',
+    tags:['dod_focused','ic_backed','cheapest_appalachian_power','tax_incentives','remote_secure'],
+    signals:[
+      {type:'building_permit',date:'2024-11-08',desc:'Hardy County WV approves Monarch Campus mega-DC development — 3.2GW planned',confidence:'high'},
+      {type:'news',date:'2025-01-15',desc:'American Intelligence Power raises $2.5B for Moorefield WV campus buildout',confidence:'high'},
+    ]},
+
+  { id:'stargate-tx', name:'Project Stargate, Abilene TX', lat:32.4487, lng:-99.7331,
+    type:'greenfield', status:'under_construction', powerCapacityMW:1200, powerAvailableMW:1000, landAcres:1400,
+    fiberAccess:'multiple', waterAccess:'limited', opportunityScore:93,
+    region:'southwest', country:'US', state:'TX', city:'Abilene',
+    powerCostPerMWh:38, pueEstimate:1.35,
+    owner:'Stargate LLC (OpenAI / SoftBank / Oracle JV)', forSaleProbability:8,
+    notes:'$500B committed JV between OpenAI, SoftBank, Oracle. Phase 1: 1.2GW in Abilene. Total plan: 5GW across US. ERCOT grid + wind PPAs = ~$38/MWh blended. Government-aligned (Executive Order backing). Oracle providing cloud infra, OpenAI AI workloads. One of the largest announced DC investments in history.',
+    tags:['ai_first','government_backed','500b_committed','ercot_wind','openai_oracle_softbank'],
+    signals:[
+      {type:'news',date:'2025-01-21',desc:'President Trump announces $500B Stargate AI infrastructure initiative — Abilene TX first campus',confidence:'high'},
+      {type:'building_permit',date:'2025-02-10',desc:'Abilene TX issues permits for 1,400-acre Stargate Phase 1 campus',confidence:'high'},
+      {type:'interconnection_request',date:'2025-01-28',desc:'ERCOT interconnection filed for 1,200MW Stargate Abilene facility',confidence:'high'},
+    ]},
+
+  { id:'xai-memphis', name:'xAI Colossus Supercluster, Memphis TN', lat:35.1495, lng:-90.0490,
+    type:'existing_dc', status:'operational', powerCapacityMW:1000, powerAvailableMW:200, landAcres:100,
+    fiberAccess:'multiple', waterAccess:'limited', opportunityScore:82,
+    region:'southeast', country:'US', state:'TN', city:'Memphis',
+    powerCostPerMWh:55, pueEstimate:1.3,
+    owner:'xAI (Elon Musk)', forSaleProbability:5,
+    notes:"World's largest GPU cluster. Colossus v1: 100,000 x H100 GPUs (200MW). Scaling to 1M GPUs / 1GW. Located in former Electrolux factory. Memphis Light Gas Water supply. MLGW controversially granted fast-track power. Core xAI training infrastructure — not for sale.",
+    tags:['largest_gpu_cluster','grok_ai','xai_core','mlgw_power','repurposed_factory'],
+    signals:[
+      {type:'news',date:'2024-07-22',desc:'xAI opens Colossus: 100,000 Nvidia H100 GPUs in Memphis — world largest training cluster',confidence:'high'},
+      {type:'news',date:'2025-01-10',desc:'xAI announces Colossus Phase 2: scaling to 1M GPUs and 1GW power',confidence:'high'},
+    ]},
+
+  { id:'meta-louisiana', name:'Meta Louisiana Mega-Campus, Richland Parish', lat:32.4183, lng:-91.7629,
+    type:'greenfield', status:'under_construction', powerCapacityMW:2000, powerAvailableMW:1800, landAcres:4000,
+    fiberAccess:'multiple', waterAccess:'abundant', opportunityScore:87,
+    region:'southeast', country:'US', state:'LA', city:'Richland Parish',
+    powerCostPerMWh:45, pueEstimate:1.38,
+    owner:'Meta Platforms', forSaleProbability:5,
+    notes:"Meta's largest single DC campus globally. $10B+ investment. Entergy Louisiana partnership for renewable supply. Mississippi River water access. Richland Parish offered $1.2B in tax incentives (PILOT). Purpose-built for Llama AI training at scale.",
+    tags:['meta_ai_training','largest_meta_campus','entergy_renewable','mississippi_river_water','pilot_tax'],
+    signals:[
+      {type:'building_permit',date:'2024-10-01',desc:'Meta breaks ground on 4,000-acre Louisiana AI campus — $10B Phase 1',confidence:'high'},
+      {type:'interconnection_request',date:'2024-09-15',desc:'Entergy Louisiana files 2,000MW interconnection for Meta Richland Parish campus',confidence:'high'},
+    ]},
+
+  { id:'microsoft-racine', name:'Microsoft AI Campus, Racine WI', lat:42.7261, lng:-87.7828,
+    type:'greenfield', status:'under_construction', powerCapacityMW:500, powerAvailableMW:400, landAcres:700,
+    fiberAccess:'multiple', waterAccess:'abundant', opportunityScore:81,
+    region:'midwest', country:'US', state:'WI', city:'Racine',
+    powerCostPerMWh:52, pueEstimate:1.38,
+    owner:'Microsoft', forSaleProbability:5,
+    notes:'$3.3B Microsoft investment on former Foxconn site. We Energies partnership. Lake Michigan water cooling. Part of broader $80B FY2025 Microsoft global DC spending. Built on failed Foxconn LCD campus — major brownfield-to-DC conversion. State offered $15M in workforce grants.',
+    tags:['microsoft_azure','foxconn_brownfield','lake_michigan_cooling','we_energies','ai_campus'],
+    signals:[
+      {type:'news',date:'2024-05-08',desc:'Microsoft announces $3.3B Racine Wisconsin AI and cloud campus on Foxconn site',confidence:'high'},
+      {type:'building_permit',date:'2024-08-15',desc:'Racine County issues permits for 700-acre Microsoft campus Phase 1',confidence:'high'},
+    ]},
+
+  { id:'nuclear-berwick-pa', name:'Susquehanna Nuclear DC Campus, Berwick PA', lat:41.0578, lng:-76.2497,
+    type:'power_plant', status:'under_construction', powerCapacityMW:960, powerAvailableMW:800, landAcres:300,
+    fiberAccess:'single', waterAccess:'abundant', opportunityScore:88,
+    region:'northeast', country:'US', state:'PA', city:'Berwick',
+    powerCostPerMWh:28, pueEstimate:1.3,
+    owner:'Amazon Web Services (campus) / Talen Energy (nuclear plant)', forSaleProbability:10,
+    notes:'First major nuclear co-location deal. AWS purchased 960MW directly from Susquehanna nuclear plant via Talen Energy agreement. 24/7 carbon-free power at ~$28/MWh — best clean power cost in US. FERC challenged the agreement (grid bypass concerns) but ultimately approved. Template for future nuclear DC co-location.',
+    tags:['nuclear_power','24_7_carbon_free','cheapest_clean_power','aws_anchor','ferc_approved','nuclear_colocation'],
+    signals:[
+      {type:'partner_announcement',date:'2023-03-28',desc:'Talen Energy signs 960MW nuclear power purchase agreement with Amazon AWS',confidence:'high'},
+      {type:'news',date:'2024-09-15',desc:'FERC approves Susquehanna-AWS nuclear co-location deal after review',confidence:'high'},
+    ]},
+
+  { id:'google-mayes-ok', name:'Google Pryor Creek Campus, Mayes County OK', lat:36.3090, lng:-95.3200,
+    type:'existing_dc', status:'operational', powerCapacityMW:400, powerAvailableMW:50, landAcres:800,
+    fiberAccess:'multiple', waterAccess:'abundant', opportunityScore:80,
+    region:'southwest', country:'US', state:'OK', city:'Pryor',
+    powerCostPerMWh:40, pueEstimate:1.35,
+    owner:'Google (Alphabet)', forSaleProbability:5,
+    notes:"Google's longest-running hyperscale campus outside Virginia. $4B+ invested since 2007. GRDA (Grand River Dam Authority) hydro power. Expanding heavily for AI. MidAmerica Industrial Park. 100% renewable matched. Not for sale.",
+    tags:['google_core','grda_hydro','100_renewable','midamerica_industrial_park','ai_expansion'],
+    signals:[
+      {type:'news',date:'2024-11-12',desc:'Google announces $1B additional Pryor Creek expansion — AI infrastructure push',confidence:'high'},
+    ]},
+
+  { id:'talen-nuclear-pa', name:'Cumulus Data / Nuclear Campus, Berks County PA', lat:40.3932, lng:-75.9946,
+    type:'power_plant', status:'in_permitting', powerCapacityMW:2500, powerAvailableMW:2000, landAcres:1800,
+    fiberAccess:'single', waterAccess:'abundant', opportunityScore:84,
+    region:'northeast', country:'US', state:'PA', city:'Pottstown',
+    powerCostPerMWh:32, pueEstimate:1.3,
+    owner:'Cumulus Data (Talen Energy spinoff)', forSaleProbability:65,
+    notes:'Adjacent to Limerick Nuclear Generating Station (2.3GW). Cumulus Data developing 2.5GW nuclear-adjacent DC campus. Talen spun off Cumulus specifically for DC development. Limerick license extended to 2054. Actively seeking anchor tenants and JV partners. High for-sale probability — Talen looking for strategic partner or full sale.',
+    tags:['nuclear_adjacent','limerick_ngs','carbon_free','talen_spinoff','seeking_partner','anchor_tenant_needed'],
+    signals:[
+      {type:'news',date:'2024-06-20',desc:'Cumulus Data files 2,500MW campus development plan adjacent to Limerick nuclear plant',confidence:'high'},
+      {type:'land_sale',date:'2024-04-10',desc:'Talen Energy transfers 1,800 acres to Cumulus Data for nuclear campus development',confidence:'high'},
+    ]},
+
+  { id:'coreweave-plano', name:'CoreWeave AI Cloud, Plano TX', lat:33.0198, lng:-96.6989,
+    type:'existing_dc', status:'operational', powerCapacityMW:300, powerAvailableMW:50, landAcres:80,
+    fiberAccess:'multiple', waterAccess:'limited', opportunityScore:81,
+    region:'southwest', country:'US', state:'TX', city:'Plano',
+    powerCostPerMWh:48, pueEstimate:1.25,
+    owner:'CoreWeave (Nvidia-backed, NYSE: CRWV)', forSaleProbability:20,
+    notes:'Largest AI-native cloud provider. $23B+ in Nvidia GPU inventory. 32 data centers across US and Europe. Recently IPO\'d (March 2025). Microsoft $10B+ customer. Expanding rapidly. Plano TX flagship. Not a real estate play — pure GPU-as-a-service. Potential M&A target for hyperscalers.',
+    tags:['ai_gpu_cloud','nvidia_backed','ipo_2025','microsoft_customer','gpu_as_a_service','ma_candidate'],
+    signals:[
+      {type:'news',date:'2025-03-28',desc:'CoreWeave IPO raises $1.5B at $40B valuation — largest tech IPO of 2025',confidence:'high'},
+      {type:'sec_filing',date:'2025-01-15',desc:'CoreWeave S-1 filing reveals $23B GPU inventory and $15B revenue backlog',confidence:'high'},
+    ]},
+
+  { id:'cipher-odessa', name:'Cipher Mining / AI Conversion, Odessa TX', lat:31.8457, lng:-102.3676,
+    type:'industrial_conversion', status:'available', powerCapacityMW:300, powerAvailableMW:300, landAcres:400,
+    fiberAccess:'single', waterAccess:'limited', opportunityScore:72,
+    region:'southwest', country:'US', state:'TX', city:'Odessa',
+    powerCostPerMWh:35, pueEstimate:1.4,
+    owner:'Cipher Mining (NASDAQ: CIFR)', forSaleProbability:75,
+    notes:'Publicly traded Bitcoin miner pivoting to AI/HPC hosting. 300MW permitted in ERCOT. Cheap Permian Basin power. Actively marketing sites to AI tenants and potential acquirers. Balance sheet under pressure — high probability of sale or JV. ERCOT West zone with strong wind PPA availability.',
+    tags:['bitcoin_miner_pivot','ercot_cheap_power','publicly_traded','ai_hpc_conversion','ma_target','permian_basin'],
+    signals:[
+      {type:'news',date:'2025-02-14',desc:'Cipher Mining announces pivot from Bitcoin to AI/HPC hosting — exploring strategic alternatives',confidence:'high'},
+      {type:'sec_filing',date:'2025-03-01',desc:'CIFR 10-K discloses 300MW permitted capacity and AI conversion strategy',confidence:'high'},
+    ]},
+
+  { id:'aligned-chandler-az', name:'Aligned Data Centers, Chandler AZ', lat:33.3062, lng:-111.8413,
+    type:'greenfield', status:'under_construction', powerCapacityMW:500, powerAvailableMW:300, landAcres:800,
+    fiberAccess:'multiple', waterAccess:'limited', opportunityScore:80,
+    region:'southwest', country:'US', state:'AZ', city:'Chandler',
+    powerCostPerMWh:55, pueEstimate:1.3,
+    owner:'Aligned Data Centers (Macquarie Capital)', forSaleProbability:50,
+    notes:'Macquarie Capital-backed colocation operator. Proprietary Delta3 cooling technology (water-efficient). Phoenix/Chandler market = major hyperscaler demand. Strong Microsoft, Meta tenancy. Macquarie typically holds 5-7yr then exits. Realistic sale or IPO candidate 2026-2027.',
+    tags:['macquarie_backed','delta3_cooling','water_efficient','chandler_tech_corridor','hyperscaler_tenant'],
+    signals:[
+      {type:'building_permit',date:'2024-09-20',desc:'Chandler AZ issues 500MW campus permits for Aligned Phase 3 expansion',confidence:'high'},
+    ]},
+
+  { id:'novva-utah', name:'Novva Data Centers, West Jordan UT', lat:40.5621, lng:-112.0089,
+    type:'greenfield', status:'under_construction', powerCapacityMW:200, powerAvailableMW:150, landAcres:200,
+    fiberAccess:'multiple', waterAccess:'limited', opportunityScore:78,
+    region:'mountain', country:'US', state:'UT', city:'West Jordan',
+    powerCostPerMWh:45, pueEstimate:1.32,
+    owner:'Novva Data Centers (GI Partners)', forSaleProbability:60,
+    notes:'GI Partners PE-backed. Salt Lake Valley market growing fast (Oracle, Adobe, eBay HQs nearby). Rocky Mountain cooling advantage. Rocky Mountain Power (Berkshire Hathaway Energy). GI Partners investment horizon suggests potential exit 2025-2027. Actively seeking strategic capital partners.',
+    tags:['gi_partners_backed','salt_lake_market','rocky_mountain_cooling','berkshire_power','pe_exit_horizon'],
+    signals:[
+      {type:'news',date:'2024-08-01',desc:'Novva secures $500M in financing for West Jordan Utah campus expansion',confidence:'high'},
+    ]},
+
+  { id:'edgecore-aurora', name:'EdgeCore Digital, Aurora CO', lat:39.7294, lng:-104.8319,
+    type:'greenfield', status:'operational', powerCapacityMW:300, powerAvailableMW:80, landAcres:200,
+    fiberAccess:'multiple', waterAccess:'limited', opportunityScore:77,
+    region:'mountain', country:'US', state:'CO', city:'Aurora',
+    powerCostPerMWh:50, pueEstimate:1.33,
+    owner:'EdgeCore Digital (APG / Ontario Teachers\' Pension)', forSaleProbability:45,
+    notes:'Dutch pension (APG) and Ontario Teachers co-investment. Denver/Aurora tech market (AWS, Google, Palantir). 100% renewable commitment via Xcel Energy PPAs. Institutional PE owners with long hold horizon but potential for partial stake sale. Strong operational track record.',
+    tags:['pension_fund_backed','denver_market','xcel_renewable','apg_otpp','institutional_capital'],
+    signals:[
+      {type:'news',date:'2024-07-10',desc:'EdgeCore raises $1.1B for Aurora CO and Phoenix expansion — APG leads',confidence:'high'},
+    ]},
+
+  { id:'sabey-quincy', name:'Sabey Data Centers, Quincy WA', lat:47.2343, lng:-119.8526,
+    type:'existing_dc', status:'operational', powerCapacityMW:200, powerAvailableMW:40, landAcres:150,
+    fiberAccess:'multiple', waterAccess:'abundant', opportunityScore:79,
+    region:'northwest', country:'US', state:'WA', city:'Quincy',
+    powerCostPerMWh:22, pueEstimate:1.28,
+    owner:'Sabey Corporation (private, family-owned)', forSaleProbability:55,
+    notes:"Cheapest power in continental US via Columbia River hydroelectric ($0.022/kWh). Quincy WA = Grant County PUD. Major co-location campus alongside Microsoft, Amazon, Yahoo. Sabey is private/family-owned — aging ownership structure increases sale probability. Natural air cooling from Columbia Basin climate. Fiber: CenturyLink, Zayo.",
+    tags:['cheapest_us_power','columbia_river_hydro','grant_county_pud','natural_air_cooling','family_owned_pe_candidate'],
+    signals:[
+      {type:'news',date:'2024-10-05',desc:'Sabey announces 200MW Quincy Phase 4 expansion — seeking capital partner',confidence:'medium'},
+    ]},
+
+  { id:'iron-mountain-nova', name:'Iron Mountain Data Centers, Northern Virginia', lat:38.9142, lng:-77.2311,
+    type:'existing_dc', status:'operational', powerCapacityMW:150, powerAvailableMW:20, landAcres:40,
+    fiberAccess:'multiple', waterAccess:'limited', opportunityScore:73,
+    region:'northeast', country:'US', state:'VA', city:'Manassas',
+    powerCostPerMWh:58, pueEstimate:1.45,
+    owner:'Iron Mountain (NYSE: IRM — REIT)', forSaleProbability:60,
+    notes:'Iron Mountain is a public REIT with mixed physical archive + DC business. DC segment growing but non-core assets may be divested. NOVA assets well-located but older vintage (2008-2015). REIT structure = pressure to recycle capital. Potential sale-leaseback opportunity. Activist investor interest in pure-play DC REIT spin-off.',
+    tags:['public_reit','sale_leaseback_candidate','older_vintage','activist_pressure','non_core_assets'],
+    signals:[
+      {type:'sec_filing',date:'2025-01-30',desc:'Iron Mountain 10-K highlights DC segment as growth priority — older assets under review',confidence:'medium'},
+    ]},
+];
+
+// Merge new sites into master list
+SITES.push(...NEW_SITES);
+
+// ── Owner / for-sale probability for existing sites ───────────────────
+// Applied after insert via UPDATE so we don't need to touch the huge SITES array
+const OWNER_DATA: Record<string, { owner: string; prob: number }> = {
+  'pwc-va':         { owner: 'QTS/Blackstone, Vantage, Digital Realty, Quantum Loophole (multi-owner zone)', prob: 55 },
+  'loudoun-va':     { owner: 'Equinix, Digital Realty, NTT, QTS, CoreSite, Cologix', prob: 20 },
+  'new-albany-oh':  { owner: 'Meta Platforms (primary), Amazon AWS', prob: 5 },
+  'memphis-tn':     { owner: 'Meta Platforms, Microsoft (DeSoto County zone)', prob: 8 },
+  'cheyenne-wy':    { owner: 'Microsoft, Google, Lumen Technologies', prob: 15 },
+  'homer-city-pa':  { owner: 'Homer City OL LLC (NRG successor) — site available', prob: 80 },
+  'san-antonio-tx': { owner: 'CPS Energy (utility land), multiple colocation operators', prob: 50 },
+  'zeewolde-nl':    { owner: 'Microsoft', prob: 8 },
+  'frankfurt-de':   { owner: 'Equinix, NTT, CyrusOne/GDS, Digital Realty, Telehouse', prob: 25 },
+  'amsterdam-nl':   { owner: 'Equinix, Digital Realty, NTT, Iron Mountain', prob: 20 },
+  'london-uk':      { owner: 'Equinix, Ark Data Centres, Virtus, DC Byte, NTT', prob: 25 },
+  'madrid-es':      { owner: 'Equinix, Interxion/Digital Realty, Nabiax', prob: 35 },
+  'stockholm-se':   { owner: 'Bahnhof, DigiPlex/Vantage, Equinix', prob: 35 },
+  'milan-it':       { owner: 'Aruba S.p.A., Equinix, NTT', prob: 40 },
+  'paris-fr':       { owner: 'Equinix, Interxion/DRT, Data4 (AXA IM)', prob: 25 },
+  'magdeburg-de':   { owner: 'Intel (fab adjacent land), Amazon AWS', prob: 12 },
+  'warsaw-pl':      { owner: 'Equinix, Atman (PRTCOM), Beyond.pl', prob: 45 },
+  'bucharest-ro':   { owner: 'Telekom Romania, M247, RCSRDS', prob: 60 },
+  'singapore-sg':   { owner: 'Equinix, Digital Realty, Keppel DC REIT, NTT', prob: 20 },
+  'tokyo-jp':       { owner: 'Equinix, NTT, IIJ, Digital Realty, Colt DCS', prob: 15 },
+  'seoul-kr':       { owner: 'KT (Korea Telecom), SKT, LG U+, NAVER', prob: 20 },
+  'sydney-au':      { owner: 'Equinix, NTT, Macquarie Data Centres, NEXTDC', prob: 25 },
+  'johor-my':       { owner: 'YTL Power International, Bridge Data Centres, AIMS', prob: 30 },
+  'mumbai-in':      { owner: 'STT GDC India, CtrlS, NTT, Nxtra (Airtel)', prob: 40 },
+  'bangalore-in':   { owner: 'CtrlS, NxtGen, Yotta Infrastructure, GPX India', prob: 45 },
+  'hyderabad-in':   { owner: 'Amazon AWS (building), Microsoft, Google (announced)', prob: 10 },
+  'jakarta-id':     { owner: 'DCI Indonesia (Salim Group), NTT, Telkom Indonesia', prob: 40 },
+  'bangkok-th':     { owner: 'True IDC, Keppel DC, CAT Telecom, AWS (announced)', prob: 45 },
+  'hcmc-vn':        { owner: 'Viettel IDC, FPT Telecom, CMC Telecom', prob: 50 },
+  'sao-paulo-br':   { owner: 'Equinix, Ascenty (Digital Bridge / Brookfield)', prob: 35 },
+  'santiago-chile': { owner: 'Equinix, Entel, GTD Grupo Teleductos', prob: 40 },
+  'queretaro-mx':   { owner: 'KIO Networks, Equinix, CyrusOne', prob: 40 },
+  'bogota-co':      { owner: 'ETB, Claro Colombia, Equinix (announced)', prob: 45 },
+  'dubai-uae':      { owner: 'Khazna Data Centres (DEWA/ADQ), du datamena, Equinix', prob: 30 },
+  'riyadh-sa':      { owner: 'STC (Saudi Telecom), Alibaba Cloud, PIF/NEOM', prob: 20 },
+  'cairo-eg':       { owner: 'Telecom Egypt, Vodafone Egypt, Orange Egypt', prob: 55 },
+  'nairobi-ke':     { owner: 'Safaricom PLC, Rack Centre, East Africa Data Centres', prob: 55 },
+  'johannesburg-za':{ owner: 'Teraco (Berkshire Partners), Africa Data Centres (Cassava)', prob: 35 },
+  'lagos-ng':       { owner: 'MainOne/Google, Rack Centre, Medallion Communications', prob: 55 },
+};
+
 // ── Exported seed function ────────────────────────────────────────────
 export function seedDatabase(db: DatabaseSync): { siteCount: number; signalCount: number } {
   const insertSite = db.prepare(`
     INSERT OR REPLACE INTO sites
     (id,name,lat,lng,type,status,power_capacity_mw,power_available_mw,land_acres,
      fiber_access,water_access,opportunity_score,region,country,state,city,
-     power_cost_per_mwh,pue_estimate,notes,tags)
-    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+     power_cost_per_mwh,pue_estimate,notes,tags,owner,for_sale_probability)
+    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
   `);
 
   const insertSignal = db.prepare(`
@@ -793,6 +1034,10 @@ export function seedDatabase(db: DatabaseSync): { siteCount: number; signalCount
   let siteCount = 0;
   let signalCount = 0;
 
+  const updateOwner = db.prepare(
+    `UPDATE sites SET owner = ?, for_sale_probability = ? WHERE id = ? AND (owner = '' OR owner IS NULL)`
+  );
+
   db.exec('BEGIN');
   try {
     for (const site of SITES) {
@@ -802,13 +1047,18 @@ export function seedDatabase(db: DatabaseSync): { siteCount: number; signalCount
         site.fiberAccess, site.waterAccess, site.opportunityScore,
         site.region, site.country, site.state || null, site.city,
         site.powerCostPerMWh, site.pueEstimate,
-        site.notes, JSON.stringify(site.tags)
+        site.notes, JSON.stringify(site.tags),
+        site.owner || '', site.forSaleProbability ?? 50
       );
       siteCount++;
       for (const sig of site.signals) {
         insertSignal.run(site.id, sig.type, sig.date, sig.desc, sig.confidence);
         signalCount++;
       }
+    }
+    // Apply owner data to existing sites that didn't have it inline
+    for (const [id, data] of Object.entries(OWNER_DATA)) {
+      updateOwner.run(data.owner, data.prob, id);
     }
     db.exec('COMMIT');
   } catch (e) {
