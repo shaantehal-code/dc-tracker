@@ -24,12 +24,12 @@ export default function KPIBar({ sites, filtered }: Props) {
   ];
 
   return (
-    <div className="flex gap-4 px-4 py-2 bg-[#0d0d14] border-b border-[#1e1e2e] overflow-x-auto shrink-0">
+    <div className="flex gap-3 px-3 py-2 bg-[#0d0d14] border-b border-[#1e1e2e] overflow-x-auto shrink-0 scrollbar-none">
       {kpis.map(k => (
-        <div key={k.label} className="flex flex-col min-w-[100px]">
-          <span className="text-[10px] text-slate-500 uppercase tracking-wider">{k.label}</span>
-          <span className="text-lg font-bold text-white leading-tight">{k.value}</span>
-          <span className="text-[10px] text-slate-600">{k.sub}</span>
+        <div key={k.label} className="flex flex-col min-w-[80px] shrink-0">
+          <span className="text-[9px] text-slate-500 uppercase tracking-wider whitespace-nowrap">{k.label}</span>
+          <span className="text-base font-bold text-white leading-tight">{k.value}</span>
+          <span className="text-[9px] text-slate-600 whitespace-nowrap">{k.sub}</span>
         </div>
       ))}
     </div>
