@@ -969,8 +969,180 @@ const NEW_SITES: SiteRow[] = [
     ]},
 ];
 
-// Merge new sites into master list
+// ── Global markets previously missing full entries ─────────────────────
+const GLOBAL_SITES: SiteRow[] = [
+  { id:'singapore-sg', name:'Singapore — Jurong West & Woodlands', lat:1.3521, lng:103.8198,
+    type:'existing_dc', status:'operational', powerCapacityMW:1200, powerAvailableMW:60, landAcres:120,
+    fiberAccess:'multiple', waterAccess:'limited', opportunityScore:72,
+    region:'apac', country:'SG', state:'', city:'Singapore',
+    powerCostPerMWh:110, pueEstimate:1.5,
+    owner:'Equinix, Digital Realty, Keppel DC REIT, NTT, ST Telemedia', forSaleProbability:20,
+    notes:"World's most constrained DC market. IDA moratorium on new DC builds lifted 2022 with strict sustainability criteria. Only green-certified builds now approved. Land $800+/sqft. Power from SP Group — most expensive in Asia. Best play: acquire existing licensed Keppel or STT assets. Singapore Subsea cables: SEA-ME-WE 5, AAG, FASTER, TGN-Pacific, 2Africa all land here. Undisputed APAC neutral fiber hub.",
+    tags:['land_constrained','grid_moratorium','subsea_cable_hub','apac_neutral_hub','keppel_dc_reit','acquisition_target'],
+    signals:[
+      {type:'news',date:'2024-06-20',desc:'IDA Singapore approves 4 new DC campuses under green-DX framework — 300MW combined',confidence:'high'},
+      {type:'news',date:'2024-11-05',desc:'Keppel DC REIT Singapore assets fully occupied — no availability until 2026',confidence:'high'},
+    ]},
+
+  { id:'amsterdam-nl', name:'Amsterdam / AMS-IX, Netherlands', lat:52.3109, lng:4.9670,
+    type:'existing_dc', status:'operational', powerCapacityMW:1400, powerAvailableMW:150, landAcres:90,
+    fiberAccess:'multiple', waterAccess:'abundant', opportunityScore:80,
+    region:'europe', country:'NL', state:'North Holland', city:'Amsterdam',
+    powerCostPerMWh:70, pueEstimate:1.38,
+    owner:'Equinix, Digital Realty, NTT, Iron Mountain', forSaleProbability:20,
+    notes:"Europe's largest internet exchange (AMS-IX) — mandatory connectivity point for EU internet. Equinix AMS1-AMS11 + Digital Realty campuses. Province of Noord-Holland restricting new DC land use — pivot to campus acquisitions. IJ River cooling. Wind power PPAs from North Sea. Land severely constrained — €3M+/acre. Best play: secondary-market campus acquisition.",
+    tags:['ams_ix_hub','tier1_eu_market','land_constrained','acquisition_target','north_sea_wind','eu_subsea_cables'],
+    signals:[
+      {type:'zoning_change',date:'2024-04-15',desc:'Noord-Holland province bans new greenfield DC zoning until 2030 — campus acquisitions only',confidence:'high'},
+      {type:'news',date:'2025-01-10',desc:'AMS-IX reaches 12 Tbps peak traffic — new capacity record',confidence:'high'},
+    ]},
+
+  { id:'london-uk', name:'London / Slough & Docklands, UK', lat:51.5074, lng:-0.5700,
+    type:'existing_dc', status:'operational', powerCapacityMW:1300, powerAvailableMW:200, landAcres:80,
+    fiberAccess:'multiple', waterAccess:'limited', opportunityScore:78,
+    region:'europe', country:'GB', state:'England', city:'Slough',
+    powerCostPerMWh:95, pueEstimate:1.42,
+    owner:'Equinix, Ark Data Centres, Virtus, DC Byte, NTT', forSaleProbability:25,
+    notes:"Europe's 2nd-largest DC market. Slough Trading Estate = UK's Silicon Valley — Equinix LD1-LD14, VIRTUS, Ark. LINX (London Internet Exchange) in Docklands. Post-Brexit: UK data residency = strong domestic demand. Grid constraint significant — NESO issuing new supply notices. M4 corridor (Slough-Reading) has most remaining headroom.",
+    tags:['linx_hub','tier1_eu_market','slough_corridor','post_brexit_demand','grid_constrained','equinix_anchor'],
+    signals:[
+      {type:'news',date:'2024-12-05',desc:'NESO issues capacity warning for M4 data center corridor — queue exceeding 2GW',confidence:'high'},
+      {type:'building_permit',date:'2025-01-15',desc:'Virtus LON8 Slough campus approved — 200MW Phase 1',confidence:'high'},
+    ]},
+
+  { id:'paris-fr', name:'Paris / Île-de-France, France', lat:48.8309, lng:2.3330,
+    type:'existing_dc', status:'operational', powerCapacityMW:900, powerAvailableMW:200, landAcres:100,
+    fiberAccess:'multiple', waterAccess:'abundant', opportunityScore:80,
+    region:'europe', country:'FR', state:'Île-de-France', city:'Paris',
+    powerCostPerMWh:80, pueEstimate:1.42,
+    owner:'Equinix, Interxion/Digital Realty, Data4 (AXA IM)', forSaleProbability:25,
+    notes:"France's largest DC market (3rd in Europe). Paris IX (Interxion PX1) — French internet neutral exchange. EDF nuclear power = 70%+ low-carbon grid. French GDPR enforcement = strong data residency demand. Campus zones: Vélizy-Villacoublay, Clichy (now saturated), Chartres-Métropole is next. Seine river available for cooling in outer corridors. Data4 AXA campus in Les Ulis is Europe's largest single greenfield.",
+    tags:['paris_ix_hub','edf_nuclear','gdpr_residency','data4_campus','axa_backed','french_market'],
+    signals:[
+      {type:'news',date:'2024-09-22',desc:'Data4 AXA Paris mega-campus Phase 4 approved — 400MW total capacity',confidence:'high'},
+      {type:'news',date:'2025-01-28',desc:'Equinix PA8 Paris expansion — €400M announced for Pantin campus',confidence:'high'},
+    ]},
+
+  { id:'madrid-es', name:'Madrid / Alcobendas & Getafe, Spain', lat:40.5333, lng:-3.6833,
+    type:'greenfield', status:'available', powerCapacityMW:700, powerAvailableMW:500, landAcres:600,
+    fiberAccess:'multiple', waterAccess:'limited', opportunityScore:78,
+    region:'europe', country:'ES', state:'Community of Madrid', city:'Alcobendas',
+    powerCostPerMWh:75, pueEstimate:1.4,
+    owner:'Equinix, Interxion/Digital Realty, Nabiax', forSaleProbability:35,
+    notes:"Spain's largest DC market — fastest-growing in South Europe. ESPANIX (Spanish internet exchange). Red Eléctrica de España. Solar PPA from Castilla-La Mancha — lowest renewable costs in Europe (<€0.025/MWh). Alcobendas corridor (north Madrid) = main DC zone. Getafe/Illescas industrial zone (south) = greenfield opportunity. Land €150k–€400k/acre. Water risk in summer.",
+    tags:['espanix_hub','solar_renewable_ppa','fastest_growing_south_eu','greenfield_available','nabiax_present'],
+    signals:[
+      {type:'news',date:'2024-10-12',desc:'Nabiax Madrid Phase 3 — 150MW expansion at Alcobendas campus',confidence:'high'},
+      {type:'interconnection_request',date:'2025-01-20',desc:'Red Eléctrica files 500MW substation upgrade Madrid DC corridor',confidence:'high'},
+    ]},
+
+  { id:'stockholm-se', name:'Stockholm / Kista, Sweden', lat:59.4025, lng:17.9490,
+    type:'existing_dc', status:'operational', powerCapacityMW:600, powerAvailableMW:200, landAcres:200,
+    fiberAccess:'multiple', waterAccess:'abundant', opportunityScore:83,
+    region:'europe', country:'SE', state:'Stockholm County', city:'Kista',
+    powerCostPerMWh:32, pueEstimate:1.28,
+    owner:'Bahnhof, DigiPlex/Vantage, Equinix', forSaleProbability:35,
+    notes:"Stockholm's Kista Science City = Sweden's Silicon Valley — Ericsson, Nokia, IBM. Vattenfall + Fortum hydropower = near-100% renewable at €0.03/kWh. Lake Mälaren water cooling. Baltic Sea subsea cables (C-Lion1 to Germany). Climate = free cooling 10+ months/year. Equinix SK1-SK4, DigiPlex. Swedish data protection laws = strong local demand. Land €200k–€500k/acre.",
+    tags:['vattenfall_hydro','nordic_climate_cooling','kista_tech_city','c_lion1_cable','100pct_renewable','free_cooling'],
+    signals:[
+      {type:'news',date:'2024-08-15',desc:'Equinix SK5 Stockholm campus approved — 60MW Phase 1 in Bromma',confidence:'high'},
+      {type:'interconnection_request',date:'2024-11-10',desc:'Vattenfall files 400MW industrial power expansion for Stockholm region',confidence:'high'},
+    ]},
+
+  { id:'bangalore-in', name:'Bangalore / Whitefield & Electronic City, India', lat:12.9716, lng:77.5946,
+    type:'greenfield', status:'under_construction', powerCapacityMW:600, powerAvailableMW:400, landAcres:800,
+    fiberAccess:'multiple', waterAccess:'limited', opportunityScore:77,
+    region:'apac', country:'IN', state:'Karnataka', city:'Bengaluru',
+    powerCostPerMWh:65, pueEstimate:1.52,
+    owner:'CtrlS, NxtGen, Yotta Infrastructure, GPX India', forSaleProbability:45,
+    notes:"India's 2nd largest DC market (after Mumbai). Whitefield IT corridor — IBM, Intel, Google India HQs create enterprise demand. BESCOM power (Karnataka Electricity Board). Kaveri River basin water. Strong IT/BPO demand = colocation-focused. Cooling load critical — avg 28°C/82°F year-round. GPX India, CtrlS expanding. Data localization law (DPDP 2023) = mandatory Indian residency.",
+    tags:['india_2nd_largest','dpdp_localization','it_hub','ctrlS_present','enterprise_demand','whitefield_corridor'],
+    signals:[
+      {type:'news',date:'2024-10-25',desc:'GPX India announces 100MW Bengaluru campus — targets cloud and AI workloads',confidence:'high'},
+      {type:'building_permit',date:'2025-01-08',desc:'Yotta Infrastructure Whitefield Phase 2 permit — 80MW expansion',confidence:'high'},
+    ]},
+
+  { id:'hyderabad-in', name:'Hyderabad / HITEC City, India', lat:17.4435, lng:78.3772,
+    type:'greenfield', status:'under_construction', powerCapacityMW:800, powerAvailableMW:600, landAcres:1200,
+    fiberAccess:'multiple', waterAccess:'limited', opportunityScore:79,
+    region:'apac', country:'IN', state:'Telangana', city:'Hyderabad',
+    powerCostPerMWh:60, pueEstimate:1.5,
+    owner:'Amazon AWS (building), Microsoft, Google (announced)', forSaleProbability:10,
+    notes:"India's fastest-growing hyperscale destination. HITEC City and Financial District = Microsoft India HQ, Amazon India, Google. All three major hyperscalers building own campuses. Telangana government proactive — 2 dedicated DC parks approved. TSPDCL power. Hussain Sagar Lake water access. Land ₹5–15cr/acre (cheaper than Mumbai/Bangalore). DPDP 2023 = strong domestic cloud demand.",
+    tags:['hyperscale_all_three','telangana_incentives','hitec_city','dpdp_localization','aws_microsoft_google','fastest_growing_india'],
+    signals:[
+      {type:'building_permit',date:'2024-07-15',desc:'Amazon AWS Hyderabad hyperscale campus Phase 1 groundbreaking — 300MW',confidence:'high'},
+      {type:'partner_announcement',date:'2024-11-20',desc:'Telangana government launches dedicated DC industrial park — 500 acres near ORR',confidence:'high'},
+    ]},
+
+  { id:'jakarta-id', name:'Jakarta / Bekasi, Indonesia', lat:-6.2382, lng:107.0007,
+    type:'greenfield', status:'under_construction', powerCapacityMW:700, powerAvailableMW:500, landAcres:1500,
+    fiberAccess:'multiple', waterAccess:'limited', opportunityScore:77,
+    region:'apac', country:'ID', state:'West Java', city:'Bekasi',
+    powerCostPerMWh:65, pueEstimate:1.55,
+    owner:'DCI Indonesia (Salim Group), NTT, Telkom Indonesia', forSaleProbability:40,
+    notes:"Largest population in ASEAN (270M+). PLN national utility territory. Indonesian data localization law (Permenkominfo 5/2021) = all Indonesian data must stay in-country. Bekasi industrial corridor = primary DC zone (lower land cost, PLN feed). Cikarang also active. All hyperscalers building or announced. Heat and humidity = PUE challenge. DCI Indonesia (Salim Group) dominant operator.",
+    tags:['data_localization_law','asean_largest_population','dci_indonesia','pln_power','bekasi_corridor','hyperscale_announced'],
+    signals:[
+      {type:'news',date:'2024-08-10',desc:'AWS announces Indonesia cloud region — Bekasi and Cikarang campuses confirmed',confidence:'high'},
+      {type:'building_permit',date:'2024-12-01',desc:'DCI Indonesia Phase 4 Bekasi campus permit — 200MW',confidence:'high'},
+    ]},
+
+  { id:'hillsboro-or', name:'Hillsboro / Columbia Corridor, Oregon', lat:45.5229, lng:-122.9898,
+    type:'greenfield', status:'under_construction', powerCapacityMW:1500, powerAvailableMW:800, landAcres:3000,
+    fiberAccess:'multiple', waterAccess:'abundant', opportunityScore:85,
+    region:'northwest', country:'US', state:'OR', city:'Hillsboro',
+    powerCostPerMWh:38, pueEstimate:1.32,
+    owner:'Intel (fab), Nike, Intel-adjacent operators', forSaleProbability:40,
+    notes:"Intel's largest fab complex (D1, D1C, D1D, D1X) = massive existing transmission infrastructure. PGE (Portland General Electric) + PacifiCorp BPA hydro. Columbia River water. Intel's infrastructure investment makes adjacent land extremely DC-ready. Oregon Enterprise Zone = 15-year property tax exemption. Nike World HQ = fiber redundancy. Climate excellent — PUE <1.32 achievable.",
+    tags:['intel_fab_adjacent','oregon_enterprise_zone','bpa_hydro','columbia_river_water','pge_pacificorp','free_cooling'],
+    signals:[
+      {type:'interconnection_request',date:'2024-05-15',desc:'PGE Portland files 600MW transmission upgrade for Washington/Hillsboro corridor',confidence:'high'},
+      {type:'news',date:'2024-09-20',desc:'Intel $25B Hillsboro fab expansion triggers third substation — DC opportunity',confidence:'high'},
+    ]},
+
+  { id:'marseille-fr', name:'Marseille / Provence, France', lat:43.2965, lng:5.3698,
+    type:'greenfield', status:'available', powerCapacityMW:400, powerAvailableMW:380, landAcres:800,
+    fiberAccess:'multiple', waterAccess:'abundant', opportunityScore:83,
+    region:'europe', country:'FR', state:'Provence-Alpes-Côte d\'Azur', city:'Marseille',
+    powerCostPerMWh:65, pueEstimate:1.38,
+    owner:'Interxion/Digital Realty, Jaguar Network', forSaleProbability:50,
+    notes:"Emerging European subsea cable hub — 15+ submarine cables land at Marseille (2Africa, AAE-1, PEACE, Seaborn, Blue-Raman, SEA-ME-WE 6). Interxion MRS1-MRS3 already built at cable landing stations. Mediterranean Sea cooling. EDF power. Land €100k–€250k/acre. EU Strategic interest for Africa/Asia cable connectivity. Fastest-growing EU cable hub — could rival Sines Portugal.",
+    tags:['subsea_cable_hub','15_cables_landing','2africa_aae1_peace','mediterranean_cooling','edf_power','emerging_eu_cable_hub'],
+    signals:[
+      {type:'partner_announcement',date:'2024-06-10',desc:'PEACE cable extension — new Marseille landing station approved, 2026 completion',confidence:'high'},
+      {type:'news',date:'2024-12-15',desc:'Interxion MRS4 Marseille campus announced — €200M expansion for cable connectivity',confidence:'high'},
+    ]},
+
+  { id:'tel-aviv-il', name:'Tel Aviv / Petah Tikva, Israel', lat:32.0853, lng:34.9285,
+    type:'greenfield', status:'available', powerCapacityMW:300, powerAvailableMW:250, landAcres:400,
+    fiberAccess:'multiple', waterAccess:'limited', opportunityScore:76,
+    region:'mena', country:'IL', state:'Central District', city:'Petah Tikva',
+    powerCostPerMWh:80, pueEstimate:1.45,
+    owner:'Bezeq, Hot-Net, Equinix', forSaleProbability:45,
+    notes:"Middle East's highest-density tech economy. MATAM (Haifa) and Petah Tikva (Tel Aviv) = highest tech talent density globally. IEC (Israel Electric Corporation) grid. Mediterranean subsea cables (Tanap, EMOS, MedNautilus). Strong cybersecurity enterprise demand. Political risk premium. IEC building renewable capacity. Land constrained — €500k+/acre.",
+    tags:['cybersecurity_hub','tech_talent_dense','med_subsea_cables','iec_power','political_risk_premium'],
+    signals:[
+      {type:'news',date:'2024-10-05',desc:'Equinix announces Tel Aviv campus — TLV1 60MW facility in Petah Tikva',confidence:'high'},
+    ]},
+
+  { id:'abu-dhabi-uae', name:'Abu Dhabi / Masdar City, UAE', lat:24.4539, lng:54.3773,
+    type:'greenfield', status:'announced', powerCapacityMW:600, powerAvailableMW:600, landAcres:2000,
+    fiberAccess:'multiple', waterAccess:'limited', opportunityScore:78,
+    region:'mena', country:'AE', state:'Abu Dhabi', city:'Abu Dhabi',
+    powerCostPerMWh:45, pueEstimate:1.52,
+    owner:'TAQA (Abu Dhabi National Energy), G42, Mubadala', forSaleProbability:25,
+    notes:"ADQ/Mubadala-backed DC buildout via G42 and CloudBlue. ADNOC + TAQA = industrial power at scale. Masdar City is world's first carbon-neutral city and DC hub — free zone with 0% tax. Al Ain road corridor greenfield. Extreme heat (45°C+) = cooling OPEX critical. Microsoft, Oracle, AWS all UAE sovereign deals. Better governance track record than Riyadh.",
+    tags:['masdar_city_free_zone','g42_adq','zero_tax','taqa_power','microsoft_oracle_aws','mubadala_backed'],
+    signals:[
+      {type:'partner_announcement',date:'2024-09-15',desc:'G42 CloudBlue Abu Dhabi campus Phase 2 — 200MW in Masdar City free zone',confidence:'high'},
+      {type:'news',date:'2025-02-01',desc:'Microsoft UAE sovereign cloud — Abu Dhabi and Dubai regions operational',confidence:'high'},
+    ]},
+];
+
+// Merge all new sites
 SITES.push(...NEW_SITES);
+SITES.push(...GLOBAL_SITES);
 
 // ── Owner / for-sale probability for existing sites ───────────────────
 // Applied after insert via UPDATE so we don't need to touch the huge SITES array
