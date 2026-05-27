@@ -9,6 +9,7 @@ import { runNewsRss } from './news-rss';
 import { runEia } from './eia';
 import { runFerc } from './ferc';
 import { runGdelt } from './gdelt';
+import { runIsoQueues } from './iso-queues';
 
 export const SOURCES: Record<string, {
   label: string;
@@ -22,7 +23,7 @@ export const SOURCES: Record<string, {
   },
   news_rss: {
     label: 'News & RSS',
-    desc: 'DCD, The Register, DCFrontier, Bisnow, 4 more feeds',
+    desc: 'DCD, The Register, DCFrontier, Bisnow + 16 more feeds & targeted searches',
     run: runNewsRss,
   },
   eia: {
@@ -39,6 +40,11 @@ export const SOURCES: Record<string, {
     label: 'Global Expansion',
     desc: 'International DC construction, investment & greenfield announcements',
     run: runGdelt,
+  },
+  iso_queues: {
+    label: 'ISO Queue Monitor',
+    desc: 'All 7 US ISO/RTOs + non-ISO utilities + Canada — large-load interconnection requests',
+    run: runIsoQueues,
   },
 };
 

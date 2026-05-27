@@ -68,6 +68,38 @@ async function fetchStatePrices(apiKey: string): Promise<EiaPrice[]> {
   return json?.response?.data ?? [];
 }
 
+// EIA-860M planned/under-construction generator capacity by state
+// Used to detect new large power plants being built to serve data centers
+interface EiaGenerator {
+  period: string;
+  stateid: string;
+  'nameplate-capacity-mw': number;
+  'entity-name'?: string;
+  'generator-id'?: string;
+}
+
+async function fetchPlannedGenerators(apiKey: string): Promise<EiaGenerator[]> {
+  // P=Planned, V=Under Construction — monthly, last 6 months, large only
+  const sixMonthsAgo = new Date();
+  sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+  const start = sixMonthsAgo.toISOString().slice(0, 7);
+
+  const url = `${EIA_BASE}/electricity/operating-generator-capacity/data/` +
+    `?api_key=${apiKey}` +
+    `&facets[status][]=P&facets[status][]=V` +
+    `&data[0]=nameplate-capacity-mw` +
+    `&frequency=monthly` +
+    `&sort[0][column]=nameplate-capacity-mw&sort[0][direction]=desc` +
+    `&start=${start}&length=200`;
+
+  try {
+    const res = await fetch(url, { signal: AbortSignal.timeout(15000) });
+    if (!res.ok) return [];
+    const json = await res.json() as { response?: { data?: EiaGenerator[] } };
+    return json?.response?.data ?? [];
+  } catch { return []; }
+}
+
 export async function runEia(sites: SiteStub[]): Promise<RawSignal[]> {
   const apiKey = process.env.EIA_API_KEY;
   if (!apiKey) {
@@ -131,6 +163,44 @@ export async function runEia(sites: SiteStub[]): Promise<RawSignal[]> {
       });
     }
   }
+
+  // ── EIA-860M: Planned / Under-Construction generators ──────────────────────
+  // Identifies large new power plants being built in DC-heavy states
+  // (≥100 MW planned = likely data center or industrial load anchor)
+  try {
+    const generators = await fetchPlannedGenerators(apiKey);
+    const seenGen = new Set<string>();
+
+    for (const gen of generators) {
+      const mw = gen['nameplate-capacity-mw'];
+      if (!mw || mw < 100) continue;  // only large plants
+
+      const stateId = gen.stateid?.toUpperCase();
+      const siteIds = STATE_SITES[stateId];
+      if (!siteIds || siteIds.length === 0) continue;
+
+      const dedupKey = `${stateId}-${gen.period}-${Math.round(mw)}`;
+      if (seenGen.has(dedupKey)) continue;
+      seenGen.add(dedupKey);
+
+      const entityName = gen['entity-name'] || 'Unknown entity';
+      const description = `EIA-860M ${gen.period}: ${entityName} — ${mw.toFixed(0)} MW planned/under-construction in ${stateId}`;
+      const date = gen.period ? gen.period + '-01' : new Date().toISOString().slice(0, 10);
+
+      for (const siteId of siteIds) {
+        const site = sites.find(s => s.id === siteId);
+        if (!site) continue;
+        signals.push({
+          siteId,
+          type: 'interconnection_request',
+          date,
+          description,
+          sourceUrl: `https://www.eia.gov/electricity/data/eia860m/`,
+          confidence: mw >= 500 ? 'high' : 'medium',
+        });
+      }
+    }
+  } catch { /* EIA-860M is bonus data; never fail the whole source */ }
 
   return signals;
 }
