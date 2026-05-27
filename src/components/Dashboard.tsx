@@ -10,7 +10,7 @@ import SiteDetail from './SiteDetail';
 import SignalFeed from './SignalFeed';
 import IngestPanel from './IngestPanel';
 import RemoteControlPanel from './RemoteControlPanel';
-import { List, Map as MapIcon, Zap, Upload, Radio, SlidersHorizontal, Database, FileDown, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+import { List, Map as MapIcon, Zap, Upload, Radio, SlidersHorizontal, X, Database, FileDown, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 
 const MapView = dynamic(() => import('./MapView'), { ssr: false });
 
@@ -142,7 +142,7 @@ export default function Dashboard({ initialSites }: Props) {
   }, []);
 
   return (
-    <div className="flex flex-col h-screen bg-[#0a0a0f] text-slate-200 overflow-hidden">
+    <div className="flex flex-col h-dvh bg-[#0a0a0f] text-slate-200 overflow-hidden">
 
       {/* Header */}
       <div className="flex items-center justify-between px-3 py-2 bg-[#0d0d14] border-b border-[#1e1e2e] shrink-0">
@@ -200,15 +200,27 @@ export default function Dashboard({ initialSites }: Props) {
                   onClick={() => setShowMobileFilters(v => !v)}
                   className={`flex items-center gap-1.5 text-xs px-2 py-1 rounded border transition-colors ${showMobileFilters ? 'bg-blue-700 border-blue-600 text-white' : 'border-[#2d2d4e] text-slate-400 hover:text-white'}`}
                 >
-                  <SlidersHorizontal size={11} />
-                  Filters
+                  {showMobileFilters ? <X size={11} /> : <SlidersHorizontal size={11} />}
+                  {showMobileFilters ? 'Close' : 'Filters'}
                 </button>
               </div>
               {/* Collapsible filters */}
               {showMobileFilters && (
-                <div className="shrink-0 overflow-y-auto max-h-[45vh] border-b border-[#1e1e2e]">
-                  <FilterPanel filters={filters} onChange={handleFilterChange} />
-                </div>
+                <>
+                  <div className="shrink-0 overflow-y-auto max-h-[40vh] border-b border-[#1e1e2e]">
+                    <FilterPanel filters={filters} onChange={handleFilterChange} />
+                  </div>
+                  {/* Sticky "show results" footer so users can always exit the filter panel */}
+                  <div className="shrink-0 flex items-center justify-between px-3 py-2 bg-[#0d0d14] border-b border-[#1a1a2a]">
+                    <span className="text-[11px] text-slate-400">{filtered.length} result{filtered.length !== 1 ? 's' : ''}</span>
+                    <button
+                      onClick={() => setShowMobileFilters(false)}
+                      className="text-xs px-3 py-1.5 bg-blue-700 hover:bg-blue-600 text-white rounded transition-colors"
+                    >
+                      Show results
+                    </button>
+                  </div>
+                </>
               )}
               <SiteList
                 sites={filtered}

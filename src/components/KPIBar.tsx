@@ -24,14 +24,17 @@ export default function KPIBar({ sites, filtered }: Props) {
   ];
 
   return (
-    <div className="flex gap-3 px-3 py-2 bg-[#0d0d14] border-b border-[#1e1e2e] overflow-x-auto shrink-0 scrollbar-none">
-      {kpis.map(k => (
-        <div key={k.label} className="flex flex-col min-w-[80px] shrink-0">
-          <span className="text-[9px] text-slate-500 uppercase tracking-wider whitespace-nowrap">{k.label}</span>
-          <span className="text-base font-bold text-white leading-tight">{k.value}</span>
-          <span className="text-[9px] text-slate-600 whitespace-nowrap">{k.sub}</span>
-        </div>
-      ))}
+    <div className="px-3 py-2 bg-[#0d0d14] border-b border-[#1e1e2e] shrink-0">
+      {/* Mobile: 3-col grid (2 rows). Desktop: single scrollable row. */}
+      <div className="grid grid-cols-3 gap-x-4 gap-y-1.5 md:flex md:gap-3 md:overflow-x-auto md:scrollbar-none">
+        {kpis.map(k => (
+          <div key={k.label} className="flex flex-col md:min-w-[80px] md:shrink-0">
+            <span className="text-[9px] text-slate-500 uppercase tracking-wider whitespace-nowrap">{k.label}</span>
+            <span className="text-sm md:text-base font-bold text-white leading-tight">{k.value}</span>
+            <span className="text-[9px] text-slate-600 whitespace-nowrap">{k.sub}</span>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
