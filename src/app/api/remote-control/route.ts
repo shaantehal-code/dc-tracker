@@ -23,7 +23,8 @@ export async function POST(req: NextRequest) {
   try {
     const db = getDb();
     const body = await req.json();
-    const { command, params = {} } = body as { command: string; params: Record<string, unknown> };
+    const { command, params = {}, ...rest } = body as { command: string; params: Record<string, unknown>; [k: string]: unknown };
+    const allParams = { ...params, ...rest };
 
     let result: unknown;
 
@@ -37,7 +38,7 @@ export async function POST(req: NextRequest) {
       }
 
       case 'seed': {
-        const force = params.force === true;
+        const force = allParams.force === true;
         const existing = (db.prepare('SELECT COUNT(*) as n FROM sites').get() as any).n;
         if (existing > 0 && !force) {
           result = { message: `DB already has ${existing} sites. Pass "force":true to re-seed.`, siteCount: existing, skipped: true };

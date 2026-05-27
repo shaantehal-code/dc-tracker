@@ -28,7 +28,7 @@ export default function SignalFeed() {
 
   async function load() {
     setLoading(true);
-    const res = await fetch('/api/signals');
+    const res = await fetch('/api/signals?limit=500');
     if (res.ok) setSignals(await res.json());
     setLoading(false);
   }

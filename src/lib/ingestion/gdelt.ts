@@ -1,71 +1,61 @@
 /**
- * GDELT (Global Database of Events, Language, and Tone) ingester.
- * GDELT monitors news from 100+ languages globally, updated every 15 minutes.
- * Free, no authentication required.
- * Covers international DC news that RSS feeds miss (Asia, LatAm, MENA).
+ * Global DC Expansion intelligence source.
+ * Uses Google News RSS to monitor international data center announcements,
+ * investment flows, and regional expansion beyond US trade publications.
+ * Covers SE Asia, MENA, Europe, Africa, Latin America.
+ * (Replaces the unreachable GDELT EFTS endpoint.)
  */
 import type { RawSignal, SiteStub } from './types';
 import { buildSiteIndex, matchText } from './site-matcher';
 
-const GDELT_DOC = 'https://api.gdeltproject.org/api/v2/doc/doc';
+const GNEWS_RSS = 'https://news.google.com/rss/search';
 
-interface GdeltArticle {
-  url: string;
-  url_mobile?: string;
-  title: string;
-  seendate: string;   // YYYYMMDDTHHMMSSZ
-  socialimage?: string;
-  domain?: string;
-  language?: string;
-  sourcecountry?: string;
-}
-
-interface GdeltResponse {
-  articles?: GdeltArticle[];
-  status?: string;
-}
-
-// Queries optimised for DC acquisition intelligence
-const GDELT_QUERIES = [
-  { q: 'data center megawatt construction',               timespan: '14d', label: 'DC Construction' },
-  { q: 'hyperscale data center land acquisition',         timespan: '14d', label: 'DC Land' },
-  { q: 'data center interconnection power gigawatt',      timespan: '14d', label: 'DC Power' },
-  { q: 'Equinix OR "Digital Realty" OR CoreWeave expansion', timespan: '7d', label: 'DC REITs' },
-  { q: 'AI data center nuclear power colocation',         timespan: '14d', label: 'Nuclear DC' },
-  { q: 'data center Malaysia Johor OR Indonesia OR Vietnam', timespan: '14d', label: 'SE Asia DC' },
-  { q: 'data center Middle East Saudi UAE',               timespan: '14d', label: 'MENA DC' },
-  { q: 'data center Africa Lagos Nairobi Kenya',          timespan: '14d', label: 'Africa DC' },
+// Globally-focused queries complementing the US-centric trade-pub feeds
+const GLOBAL_QUERIES = [
+  'data center construction announcement megawatt billion campus',
+  'data center Singapore OR "Southeast Asia" OR Indonesia OR Malaysia hyperscale',
+  'data center UAE OR "Saudi Arabia" OR Qatar OR "Middle East" megawatt campus',
+  'data center "South Africa" OR Kenya OR Nigeria OR Africa hyperscale construction',
+  'data center Brazil OR Chile OR Mexico OR "Latin America" campus gigawatt',
+  'data center Europe Frankfurt OR Amsterdam OR Madrid OR Warsaw megawatt announced',
+  '"AI campus" OR "AI data center" construction groundbreaking billion megawatt',
+  'hyperscale data center "land acquisition" OR "breaks ground" OR "groundbreaking"',
 ];
 
-function parseGdeltDate(raw: string): string {
-  // Format: 20250115T120000Z
-  try {
-    const y = raw.slice(0, 4);
-    const mo = raw.slice(4, 6);
-    const d = raw.slice(6, 8);
-    return `${y}-${mo}-${d}`;
-  } catch {
-    return new Date().toISOString().slice(0, 10);
-  }
+const HIGH_VALUE_TERMS = [
+  'megawatt','gigawatt','mw','gw','hyperscale','campus','construction',
+  'groundbreaking','billion','million','announced','investment','expansion',
+  'greenfield','co-location','colocation','tier','subsea','cable',
+];
+
+interface GNewsItem {
+  title: string;
+  link: string;
+  pubDate: string;
+  description: string;
 }
 
-async function fetchGdelt(query: string, timespan: string): Promise<GdeltArticle[]> {
-  const url = `${GDELT_DOC}?` + new URLSearchParams({
-    query,
-    mode: 'artlist',
-    maxrecords: '25',
-    timespan,
-    format: 'json',
-    sort: 'DateDesc',
-  });
+function parseGNewsRSS(xml: string): GNewsItem[] {
+  const items: GNewsItem[] = [];
+  const itemBlocks = xml.match(/<item>([\s\S]*?)<\/item>/g) || [];
+  for (const block of itemBlocks) {
+    const title = (block.match(/<title>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/title>/) || [])[1]?.trim() || '';
+    const link = (block.match(/<link>([\s\S]*?)<\/link>/) || [])[1]?.trim() || '';
+    const pubDate = (block.match(/<pubDate>([\s\S]*?)<\/pubDate>/) || [])[1]?.trim() || '';
+    const desc = (block.match(/<description>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/description>/) || [])[1]?.trim() || '';
+    if (title) items.push({ title, link, pubDate, description: desc });
+  }
+  return items;
+}
 
-  const res = await fetch(url, {
-    headers: { 'User-Agent': 'DC-Tracker-Intelligence/1.0' },
-    signal: AbortSignal.timeout(10000),
-  });
-  if (!res.ok) throw new Error(`GDELT HTTP ${res.status}`);
-  const json = await res.json() as GdeltResponse;
-  return json?.articles ?? [];
+function scoreItem(title: string, description: string): number {
+  const low = (title + ' ' + description).toLowerCase();
+  return HIGH_VALUE_TERMS.reduce((n, t) => n + (low.includes(t) ? 1 : 0), 0);
+}
+
+function parseDate(pubDate: string): string {
+  try { return new Date(pubDate).toISOString().slice(0, 10); }
+  catch { return new Date().toISOString().slice(0, 10); }
 }
 
 export async function runGdelt(sites: SiteStub[]): Promise<RawSignal[]> {
@@ -73,25 +63,34 @@ export async function runGdelt(sites: SiteStub[]): Promise<RawSignal[]> {
   const signals: RawSignal[] = [];
   const seen = new Set<string>();
 
-  // Stagger requests to avoid hammering GDELT
-  for (const { q, timespan, label } of GDELT_QUERIES) {
-    let articles: GdeltArticle[] = [];
+  for (const q of GLOBAL_QUERIES) {
+    let xml = '';
     try {
-      articles = await fetchGdelt(q, timespan);
-      await new Promise(r => setTimeout(r, 300));
+      const url = `${GNEWS_RSS}?q=${encodeURIComponent(q)}&hl=en-US&gl=US&ceid=US:en`;
+      const res = await fetch(url, {
+        headers: { 'User-Agent': 'Mozilla/5.0 (compatible; DC-Tracker/1.0)' },
+        signal: AbortSignal.timeout(10000),
+      });
+      if (!res.ok) continue;
+      xml = await res.text();
+      await new Promise(r => setTimeout(r, 200));
     } catch { continue; }
 
-    for (const article of articles) {
-      if (seen.has(article.url)) continue;
-      seen.add(article.url);
+    const items = parseGNewsRSS(xml);
+    for (const item of items.slice(0, 15)) {
+      const dedupKey = item.link || item.title.slice(0, 80);
+      if (seen.has(dedupKey)) continue;
+      seen.add(dedupKey);
 
-      const text = `${article.title} ${article.domain || ''} ${article.sourcecountry || ''}`;
-      const matched = matchText(text, index);
+      const score = scoreItem(item.title, item.description);
+      if (score < 2) continue;
+
+      const cleanTitle = item.title.replace(/\s+-\s+[^-]+$/, '').trim();
+      const matched = matchText(item.title + ' ' + item.description, index);
       if (matched.length === 0) continue;
 
-      const date = parseGdeltDate(article.seendate);
-      const description = `[GDELT/${label}] ${article.title.slice(0, 200)}`;
-      const confidence = article.language === 'English' ? 'medium' : 'low';
+      const date = parseDate(item.pubDate);
+      const description = `Global Intel: ${cleanTitle}`;
 
       for (const siteId of matched) {
         signals.push({
@@ -99,8 +98,8 @@ export async function runGdelt(sites: SiteStub[]): Promise<RawSignal[]> {
           type: 'news',
           date,
           description,
-          sourceUrl: article.url,
-          confidence: confidence as 'medium' | 'low',
+          sourceUrl: item.link || undefined,
+          confidence: score >= 4 ? 'high' : 'medium',
         });
       }
     }

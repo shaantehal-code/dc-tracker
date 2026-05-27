@@ -7,14 +7,29 @@ import type { RawSignal, SiteStub } from './types';
 import { buildSiteIndex, matchText } from './site-matcher';
 
 const FEEDS = [
-  { url: 'https://www.datacenterdynamics.com/rss.xml',          label: 'DCD' },
-  { url: 'https://www.theregister.com/data_centre/rss',         label: 'TheRegister' },
-  { url: 'https://www.datacenterfrontier.com/feed/',            label: 'DCFrontier' },
-  { url: 'https://www.datacenterknowledge.com/rss.xml',         label: 'DCK' },
-  { url: 'https://bisnow.com/national/rss/technology',          label: 'Bisnow' },
-  { url: 'https://www.capacitymedia.com/rss',                   label: 'Capacity' },
-  { url: 'https://www.lightreading.com/rss/rss_simple.asp',     label: 'LightReading' },
-  { url: 'https://feeds.feedburner.com/DataCenterJournal',      label: 'DCJournal' },
+  // Core DC trade publications
+  { url: 'https://www.datacenterdynamics.com/rss.xml',                    label: 'DCD' },
+  { url: 'https://www.theregister.com/data_centre/rss',                   label: 'TheRegister' },
+  { url: 'https://www.datacenterfrontier.com/feed/',                      label: 'DCFrontier' },
+  { url: 'https://www.datacenterknowledge.com/rss.xml',                   label: 'DCK' },
+  { url: 'https://bisnow.com/national/rss/technology',                    label: 'Bisnow' },
+  { url: 'https://www.capacitymedia.com/rss',                             label: 'Capacity' },
+  { url: 'https://www.lightreading.com/rss/rss_simple.asp',               label: 'LightReading' },
+  { url: 'https://feeds.feedburner.com/DataCenterJournal',                label: 'DCJournal' },
+  // Energy & grid publications
+  { url: 'https://www.utilitydive.com/feeds/news/',                       label: 'UtilityDive' },
+  { url: 'https://www.greentechmedia.com/rss/all',                        label: 'GreenTech' },
+  { url: 'https://www.renewablesnow.com/feed/',                           label: 'RenewablesNow' },
+  // Real estate / CRE
+  { url: 'https://www.globest.com/category/data-centers/feed/',           label: 'GlobeSt' },
+  { url: 'https://www.commercialobserver.com/feed/',                      label: 'CommObs' },
+  // Cloud/hyperscaler coverage
+  { url: 'https://siliconangle.com/feed/',                                label: 'SiliconAngle' },
+  { url: 'https://www.cloudpro.co.uk/feed',                               label: 'CloudPro' },
+  // Google News: key targeted searches (de-duplicated from FERC/GDELT by using unique queries)
+  { url: 'https://news.google.com/rss/search?q=data+center+permit+zoning+county&hl=en-US&gl=US&ceid=US:en', label: 'GNews-Permits' },
+  { url: 'https://news.google.com/rss/search?q=data+center+lease+signed+colocation+announced&hl=en-US&gl=US&ceid=US:en', label: 'GNews-Leases' },
+  { url: 'https://news.google.com/rss/search?q=hyperscale+"breaks+ground"+campus+megawatt&hl=en-US&gl=US&ceid=US:en', label: 'GNews-Build' },
 ];
 
 // Keywords that boost a news article's relevance to DC acquisition intelligence

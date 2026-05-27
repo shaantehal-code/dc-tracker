@@ -18,7 +18,7 @@ const STATE_SITES: Record<string, string[]> = {
   TX: ['san-antonio-tx','allen-tx','stargate-tx','coreweave-plano','cipher-odessa'],
   TN: ['memphis-tn','clarksville-tn','smyrna-tn','xai-memphis'],
   WY: ['cheyenne-wy'],
-  WA: ['george-wa','quincy-wa','sabey-quincy'],
+  WA: ['george-wa','quincy-wa','sabey-quincy','seattle-wa'],
   IA: ['waukee-ia'],
   NC: ['rtp-nc'],
   GA: ['atlanta-douglas-ga'],
@@ -40,6 +40,8 @@ const STATE_SITES: Record<string, string[]> = {
   WI: ['microsoft-racine'],
   WV: ['monarch-wv'],
   LA: ['meta-louisiana'],
+  FL: ['miami-fl'],
+  NJ: ['secaucus-nj'],
 };
 
 interface EiaPrice {

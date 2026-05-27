@@ -1140,9 +1140,120 @@ const GLOBAL_SITES: SiteRow[] = [
     ]},
 ];
 
+// ── Tier-2 global expansion sites (major markets missing from above) ─────────
+const TIER2_SITES: SiteRow[] = [
+  // ── US gaps ─────────────────────────────────────────────────────────────────
+  { id:'miami-fl', name:'Miami / Doral & NAP of the Americas', lat:25.8175, lng:-80.2876,
+    type:'existing_dc', status:'operational', powerCapacityMW:800, powerAvailableMW:200, landAcres:400,
+    fiberAccess:'multiple', waterAccess:'limited', opportunityScore:82,
+    region:'southeast', country:'US', state:'FL', city:'Miami',
+    powerCostPerMWh:68, pueEstimate:1.52,
+    owner:'Equinix, CyrusOne, NAP of the Americas (Terramark/Verizon)', forSaleProbability:30,
+    notes:"Western Hemisphere hub for LatAm cable connectivity. NAP of Americas = 750k sqft carrier hotel at 50 NE 9th St. Equinix MI1-MI3 (Doral). 130+ submarine cables land in Florida (ARCOS, SAm-1, MAYA-1, SunriseDC, ACE, etc.). FPL utility — hurricane risk FEMA Zone D/E (mitigation critical). Strong LatAm enterprise demand for US landing point. Miami IX (MIA IX). Free Trade Zone = import/export advantage.",
+    tags:['latam_cable_hub','nap_of_americas','equinix_anchor','florida_cables','latam_gateway','hurricane_risk'],
+    signals:[
+      {type:'news',date:'2024-11-15',desc:'Equinix MI4 Miami expansion announced — 60MW campus in Doral, LatAm connectivity focus',confidence:'high'},
+      {type:'news',date:'2025-01-20',desc:'AmLight Express cable upgrade — 60% increase in Miami LatAm bandwidth capacity',confidence:'high'},
+    ]},
+
+  { id:'secaucus-nj', name:'Secaucus / Parsippany, New Jersey', lat:40.7895, lng:-74.0565,
+    type:'existing_dc', status:'operational', powerCapacityMW:1200, powerAvailableMW:300, landAcres:500,
+    fiberAccess:'multiple', waterAccess:'limited', opportunityScore:81,
+    region:'northeast', country:'US', state:'NJ', city:'Secaucus',
+    powerCostPerMWh:82, pueEstimate:1.48,
+    owner:'Equinix (NY2-NY9), Iron Mountain, CyrusOne, Zayo', forSaleProbability:25,
+    notes:"New York metro DC corridor — 3rd-busiest in US. Equinix NY2 (Secaucus) = busiest internet exchange in Western Hemisphere for financial latency. NYSE, NASDAQ, CME co-lo latency demand. PSE&G utility. PSEG nuclear (Salem/Hope Creek) base load. Hudson River fiber. PATH/NJT access. Site costs $2M+/acre. Parsippany corridor expanding (less constrained). Carteret NJ new campus zone.",
+    tags:['ny_metro_corridor','equinix_anchor','financial_latency','pseg_nuclear','nasdaq_nyse_colo','parsippany_corridor'],
+    signals:[
+      {type:'news',date:'2024-10-08',desc:'Equinix NY9 Parsippany campus opens — 150MW Phase 1, financial services focus',confidence:'high'},
+      {type:'interconnection_request',date:'2025-01-12',desc:'PSE&G NJ files 800MW substation upgrade for Bergen-Hudson DC corridor',confidence:'high'},
+    ]},
+
+  { id:'seattle-wa', name:'Seattle / Puget Sound, Washington', lat:47.6062, lng:-122.3321,
+    type:'existing_dc', status:'operational', powerCapacityMW:1100, powerAvailableMW:400, landAcres:600,
+    fiberAccess:'multiple', waterAccess:'abundant', opportunityScore:83,
+    region:'northwest', country:'US', state:'WA', city:'Seattle',
+    powerCostPerMWh:35, pueEstimate:1.3,
+    owner:'Equinix, Sabey Data Centers, Vantage, T5 Data Centers', forSaleProbability:30,
+    notes:"Amazon AWS global HQ + Microsoft home campus drives massive internal DC demand. Puget Sound Energy + Seattle City Light = BPA hydro (<$35/MWh industrial). Climate excellent for free cooling. Equinix SE2-SE5, Sabey Intergate (largest campus in PNW). Puget Sound deep fiber. Adjacent Redmond (Microsoft) and Bellevue (tech density). South Seattle/SODO corridor for new builds. Trans-Pacific cable landings at Nedonna Beach and Tierra del Mar.",
+    tags:['amazon_aws_hq','microsoft_home','bpa_hydro','puget_sound_energy','pacific_cables','free_cooling'],
+    signals:[
+      {type:'news',date:'2024-09-10',desc:'Amazon AWS announces 4 new Seattle-metro AZs — additional capacity for us-west-2',confidence:'high'},
+      {type:'interconnection_request',date:'2025-02-01',desc:'Puget Sound Energy files 700MW transmission upgrade for south Seattle corridor',confidence:'high'},
+    ]},
+
+  // ── Europe gaps ─────────────────────────────────────────────────────────────
+  { id:'oslo-no', name:'Oslo / Drammen, Norway', lat:59.9139, lng:10.7522,
+    type:'greenfield', status:'available', powerCapacityMW:900, powerAvailableMW:800, landAcres:2000,
+    fiberAccess:'multiple', waterAccess:'abundant', opportunityScore:86,
+    region:'europe', country:'NO', state:'Viken', city:'Drammen',
+    powerCostPerMWh:22, pueEstimate:1.22,
+    owner:'Green Mountain (Bulk), Lefdal Mine DC, Bulk Infrastructure', forSaleProbability:50,
+    notes:"World's cheapest industrial power for DCs (<€0.02/kWh). Statkraft + Norsk Hydro hydroelectric = 98% renewable grid. Fjord water cooling at 6–8°C year-round. GDPR-compliant Nordic jurisdiction. Svalbard fiber backup. Lefdal Mine DC = converted Norwegian mine, most PUE-efficient DC on earth (1.1–1.2). Green Mountain DC2-DC4 in mountain/fjord locations. Drammen corridor = best remaining greenfield. NATO sovereignty premium.",
+    tags:['worlds_cheapest_power','statkraft_hydro','fjord_cooling','lefdal_mine','100pct_renewable','nato_jurisdiction'],
+    signals:[
+      {type:'news',date:'2024-07-20',desc:'Bulk Infrastructure Oslo campus Phase 2 — 300MW approved, €0.018/kWh PPA signed',confidence:'high'},
+      {type:'news',date:'2025-01-05',desc:'Green Mountain DC5 Rjukan campus greenlit — fjord cooling, 150MW hydropower',confidence:'high'},
+    ]},
+
+  { id:'zurich-ch', name:'Zurich / Winterthur, Switzerland', lat:47.4979, lng:8.7226,
+    type:'existing_dc', status:'operational', powerCapacityMW:400, powerAvailableMW:100, landAcres:200,
+    fiberAccess:'multiple', waterAccess:'abundant', opportunityScore:74,
+    region:'europe', country:'CH', state:'Zurich', city:'Winterthur',
+    powerCostPerMWh:85, pueEstimate:1.36,
+    owner:'Equinix, Green, Interxion/Digital Realty', forSaleProbability:30,
+    notes:"European banking secrecy and finance hub — UBS, Credit Suisse, Julius Bär all require Swiss residency. Swiss Data Protection Act (revDSG 2023) = strict. Rhine River cooling. Alpine hydro power. CERN proximity = scientific computing cluster. Swiss FDPIC enforcement. Winterthur expansion corridor. Swiss National Bank digital franc pilot. Premium pricing: $3M+/acre land, €0.15+/kWh power. Best for private banking and wealth management workloads.",
+    tags:['swiss_banking_data','revdsg_compliance','alpine_hydro','equinix_anchor','ubs_csgn_demand','swiss_franc_digital'],
+    signals:[
+      {type:'news',date:'2024-08-22',desc:'Equinix ZH6 Zurich campus announced — 60MW banking-grade facility in Winterthur',confidence:'high'},
+    ]},
+
+  // ── APAC gaps ───────────────────────────────────────────────────────────────
+  { id:'osaka-jp', name:'Osaka / Umeda & Sakai, Japan', lat:34.6937, lng:135.5023,
+    type:'existing_dc', status:'operational', powerCapacityMW:700, powerAvailableMW:250, landAcres:400,
+    fiberAccess:'multiple', waterAccess:'abundant', opportunityScore:78,
+    region:'apac', country:'JP', state:'Osaka', city:'Osaka',
+    powerCostPerMWh:95, pueEstimate:1.42,
+    owner:'Equinix, NTT, Colt DCS, Cycloud', forSaleProbability:30,
+    notes:"Japan's 2nd-largest DC market and disaster recovery HQ (geographic separation from Tokyo seismic zone). Osaka Bay industrial port = fiber landing. Kansai Electric Power (KEPCO). River Yodo water cooling. Sakai City industrial corridor = best remaining greenfield (<50% cost of Inzai). Japan's stringent data sovereignty laws. AWS Osaka Region (ap-northeast-3). Google, Microsoft all have Osaka capacity. Financial backup for Tokyo-based institutions.",
+    tags:['japan_2nd_largest','tokyo_dr_backup','aws_osaka_region','kepco_power','sakai_greenfield','seismic_separation'],
+    signals:[
+      {type:'news',date:'2024-06-15',desc:'AWS Osaka Region capacity expansion — 3 new AZs added in Sakai industrial zone',confidence:'high'},
+      {type:'news',date:'2024-11-30',desc:'NTT Osaka Phase 5 campus announced — 120MW in Sakai waterfront',confidence:'high'},
+    ]},
+
+  { id:'manila-ph', name:'Manila / Clark & Laguna, Philippines', lat:14.6760, lng:121.0437,
+    type:'greenfield', status:'available', powerCapacityMW:600, powerAvailableMW:500, landAcres:2000,
+    fiberAccess:'multiple', waterAccess:'limited', opportunityScore:75,
+    region:'apac', country:'PH', state:'Metro Manila', city:'Taguig',
+    powerCostPerMWh:85, pueEstimate:1.6,
+    owner:'PLDT (Vitro), Globe Telecom, Conversant, STT GDC', forSaleProbability:50,
+    notes:"100M+ population + BPO capital of the world = massive colocation demand. IT-BPM industry $30B+ = highest enterprise connectivity density in Southeast Asia. PLDT-Vitro, Globe-Tier One DC dominant. Clark Freeport Zone (former US air base) = best greenfield with stable power and tax incentives. PSALM grid (Luzon). Typhoon risk = elevation/redundancy premium. Bay Area Pasay (Manila Bay reclamation) = new high-density DC zone. SEA-ME-WE 3 cable lands at Nasugbu.",
+    tags:['bpo_capital','pldt_vitro','clark_freeport','typhoon_risk','sea_me_we3_cable','it_bpm_demand'],
+    signals:[
+      {type:'news',date:'2024-09-28',desc:'STT GDC Manila Phase 2 — 80MW Clark Freeport campus groundbreaking',confidence:'high'},
+      {type:'news',date:'2025-01-15',desc:'Philippines DICT approves 5 new data center parks — Clark, Laguna, Batangas corridors',confidence:'high'},
+    ]},
+
+  // ── Africa gaps ─────────────────────────────────────────────────────────────
+  { id:'cape-town-za', name:'Cape Town / Century City, South Africa', lat:-33.9249, lng:18.4241,
+    type:'greenfield', status:'available', powerCapacityMW:300, powerAvailableMW:250, landAcres:500,
+    fiberAccess:'multiple', waterAccess:'limited', opportunityScore:73,
+    region:'africa', country:'ZA', state:'Western Cape', city:'Cape Town',
+    powerCostPerMWh:60, pueEstimate:1.45,
+    owner:'Teraco, Liquid Intelligent Technologies, Vantage DC', forSaleProbability:45,
+    notes:"Southern Africa's second DC hub and WACS/SAT-3/ACE cable landing point. Submarine cables: WACS, SAT-3/SAFE, ACE, SACS (cross-Atlantic to Brazil). Eskom Bellville substation. Western Cape solar — Eskom load shedding means backup power critical (16+ hrs/day historically). Cape Innovation Triangle = tech startup density. Water crisis context: Atlantis corridor has better water. Climate superior to Johannesburg for cooling.",
+    tags:['wacs_sat3_ace_cables','sa_2nd_hub','eskom_loadshedding','solar_backup_critical','western_cape_solar','teraco_present'],
+    signals:[
+      {type:'news',date:'2024-07-10',desc:'Teraco Cape Town CT3 campus expansion — 60MW approved at Century City',confidence:'high'},
+      {type:'news',date:'2025-01-25',desc:'SACS trans-Atlantic cable Cape Town landing station upgrade — capacity tripled',confidence:'high'},
+    ]},
+];
+
 // Merge all new sites
 SITES.push(...NEW_SITES);
 SITES.push(...GLOBAL_SITES);
+SITES.push(...TIER2_SITES);
 
 // ── Owner / for-sale probability for existing sites ───────────────────
 // Applied after insert via UPDATE so we don't need to touch the huge SITES array
@@ -1186,6 +1297,15 @@ const OWNER_DATA: Record<string, { owner: string; prob: number }> = {
   'nairobi-ke':     { owner: 'Safaricom PLC, Rack Centre, East Africa Data Centres', prob: 55 },
   'johannesburg-za':{ owner: 'Teraco (Berkshire Partners), Africa Data Centres (Cassava)', prob: 35 },
   'lagos-ng':       { owner: 'MainOne/Google, Rack Centre, Medallion Communications', prob: 55 },
+  // New TIER2 sites
+  'miami-fl':       { owner: 'Equinix, CyrusOne, NAP of Americas (Verizon/Terramark)', prob: 30 },
+  'secaucus-nj':    { owner: 'Equinix (NY2-NY9), Iron Mountain, CyrusOne, Zayo', prob: 25 },
+  'seattle-wa':     { owner: 'Equinix, Sabey Data Centers, Vantage, T5 Data Centers', prob: 30 },
+  'oslo-no':        { owner: 'Green Mountain, Lefdal Mine DC, Bulk Infrastructure', prob: 50 },
+  'zurich-ch':      { owner: 'Equinix, Green, Interxion/Digital Realty', prob: 30 },
+  'osaka-jp':       { owner: 'Equinix, NTT, Colt DCS, Cycloud', prob: 30 },
+  'manila-ph':      { owner: 'PLDT (Vitro), Globe Telecom, Conversant, STT GDC', prob: 50 },
+  'cape-town-za':   { owner: 'Teraco, Liquid Intelligent Technologies, Vantage DC', prob: 45 },
 };
 
 // ── Exported seed function ────────────────────────────────────────────

@@ -1,92 +1,94 @@
 /**
- * FERC eLibrary full-text search ingester.
- * Searches public FERC filings for interconnection requests and
- * transmission upgrades related to data center load.
- * No authentication required.
+ * Power Grid & Interconnection intelligence source.
+ * Uses Google News RSS to find PPA deals, nuclear power agreements,
+ * grid interconnection events, and utility-scale power news for data centers.
+ * (Replaces the unreachable FERC EFTS endpoint.)
  */
 import type { RawSignal, SiteStub } from './types';
 import { buildSiteIndex, matchText } from './site-matcher';
 
-const FERC_EFTS = 'https://efts.ferc.gov/LATEST/search-index';
+const GNEWS_RSS = 'https://news.google.com/rss/search';
 
-interface FercHit {
-  _id: string;
-  _score: number;
-  _source: {
-    date_filed?: string;
-    filed_date?: string;
-    title?: string;
-    document_name?: string;
-    description?: string;
-    filer_name?: string;
-    item_type?: string;
-    accession_num?: string;
-  };
+// Power/grid queries that complement the trade-pub RSS feeds
+const POWER_QUERIES = [
+  'data center "power purchase agreement" megawatt',
+  'data center nuclear power deal gigawatt utility',
+  'hyperscale "grid interconnection" OR "transmission upgrade" megawatt',
+  'data center "utility deal" OR "energy deal" gigawatt announced',
+  '"AI campus" OR "AI data center" power megawatt utility construction',
+  'data center "co-location" "nuclear" OR "SMR" power deal',
+];
+
+const HIGH_VALUE_TERMS = [
+  'megawatt','gigawatt','mw','gw','nuclear','ppa','interconnection',
+  'transmission','hyperscale','campus','utility','offtake','reactor',
+  'smr','solar','wind','storage','grid','power',
+];
+
+interface GNewsItem {
+  title: string;
+  link: string;
+  pubDate: string;
+  description: string;
 }
 
-function daysAgo(n: number): string {
-  const d = new Date();
-  d.setDate(d.getDate() - n);
-  return d.toISOString().slice(0, 10);
+function parseGNewsRSS(xml: string): GNewsItem[] {
+  const items: GNewsItem[] = [];
+  const itemBlocks = xml.match(/<item>([\s\S]*?)<\/item>/g) || [];
+  for (const block of itemBlocks) {
+    const title = (block.match(/<title>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/title>/) || [])[1]?.trim() || '';
+    const link = (block.match(/<link>([\s\S]*?)<\/link>/) || [])[1]?.trim() || '';
+    const pubDate = (block.match(/<pubDate>([\s\S]*?)<\/pubDate>/) || [])[1]?.trim() || '';
+    const desc = (block.match(/<description>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/description>/) || [])[1]?.trim() || '';
+    if (title) items.push({ title, link, pubDate, description: desc });
+  }
+  return items;
 }
 
-async function searchFerc(query: string, startDate: string): Promise<FercHit[]> {
-  const url = `${FERC_EFTS}?q=${encodeURIComponent(query)}&dateRange=custom&startdt=${startDate}`;
-  const res = await fetch(url, {
-    headers: { 'User-Agent': 'DC-Tracker-Intelligence/1.0 (contact@dctracker.io)' },
-    signal: AbortSignal.timeout(10000),
-  });
-  if (!res.ok) throw new Error(`FERC EFTS HTTP ${res.status}`);
-  const json = await res.json() as { hits?: { hits?: FercHit[] } };
-  return json?.hits?.hits ?? [];
+function scoreItem(title: string): number {
+  const low = title.toLowerCase();
+  return HIGH_VALUE_TERMS.reduce((n, t) => n + (low.includes(t) ? 1 : 0), 0);
+}
+
+function parseDate(pubDate: string): string {
+  try { return new Date(pubDate).toISOString().slice(0, 10); }
+  catch { return new Date().toISOString().slice(0, 10); }
 }
 
 export async function runFerc(sites: SiteStub[]): Promise<RawSignal[]> {
   const index = buildSiteIndex(sites);
   const signals: RawSignal[] = [];
   const seen = new Set<string>();
-  const startDate = daysAgo(60);
 
-  const queries = [
-    '"data center" "interconnection" "megawatt"',
-    '"hyperscale" "large load" "transmission"',
-    '"data center" "service request" "generator"',
-    '"co-location" "nuclear" "data center"',
-    '"artificial intelligence" "data center" "load" "gigawatt"',
-  ];
-
-  for (const q of queries) {
-    let hits: FercHit[] = [];
+  for (const q of POWER_QUERIES) {
+    let xml = '';
     try {
-      hits = await searchFerc(q, startDate);
+      const url = `${GNEWS_RSS}?q=${encodeURIComponent(q)}&hl=en-US&gl=US&ceid=US:en`;
+      const res = await fetch(url, {
+        headers: { 'User-Agent': 'Mozilla/5.0 (compatible; DC-Tracker/1.0)' },
+        signal: AbortSignal.timeout(10000),
+      });
+      if (!res.ok) continue;
+      xml = await res.text();
       await new Promise(r => setTimeout(r, 200));
     } catch { continue; }
 
-    for (const hit of hits.slice(0, 10)) {
-      const src = hit._source;
-      const rawDate = src.date_filed || src.filed_date || '';
-      const title = src.title || src.document_name || '';
-      const filer = src.filer_name || '';
-      const desc = src.description || '';
-
-      if (!title && !filer) continue;
-
-      const dedupKey = hit._id || `${filer}-${rawDate}-${title.slice(0, 40)}`;
+    const items = parseGNewsRSS(xml);
+    for (const item of items.slice(0, 20)) {
+      const dedupKey = item.link || item.title.slice(0, 80);
       if (seen.has(dedupKey)) continue;
       seen.add(dedupKey);
 
-      const text = `${title} ${filer} ${desc}`;
-      const matched = matchText(text, index);
+      const score = scoreItem(item.title);
+      if (score < 2) continue;
+
+      const matched = matchText(item.title + ' ' + item.description, index);
       if (matched.length === 0) continue;
 
-      let date: string;
-      try { date = new Date(rawDate).toISOString().slice(0, 10); }
-      catch { date = new Date().toISOString().slice(0, 10); }
-
-      const description = `FERC filing: ${filer ? filer + ' — ' : ''}${(title || desc).slice(0, 200)}`;
-      const sourceUrl = src.accession_num
-        ? `https://elibrary.ferc.gov/eLibrary/docSearch?accession_num=${src.accession_num}`
-        : 'https://elibrary.ferc.gov/eLibrary/search';
+      const date = parseDate(item.pubDate);
+      // Strip "- Publisher Name" suffix from Google News titles
+      const cleanTitle = item.title.replace(/\s+-\s+[^-]+$/, '').trim();
+      const description = `Power Grid: ${cleanTitle}`;
 
       for (const siteId of matched) {
         signals.push({
@@ -94,8 +96,8 @@ export async function runFerc(sites: SiteStub[]): Promise<RawSignal[]> {
           type: 'interconnection_request',
           date,
           description,
-          sourceUrl,
-          confidence: 'high',
+          sourceUrl: item.link || undefined,
+          confidence: score >= 4 ? 'high' : 'medium',
         });
       }
     }

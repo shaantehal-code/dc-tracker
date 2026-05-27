@@ -40,14 +40,14 @@ const SOURCES = [
   },
   {
     key: 'ferc',
-    label: 'FERC Filings',
-    desc: 'Interconnection requests & transmission upgrades',
+    label: 'Power Grid Intel',
+    desc: 'PPA deals, nuclear agreements, grid interconnection news',
     Icon: Radio,
   },
   {
     key: 'gdelt',
-    label: 'GDELT Global News',
-    desc: 'AI-monitored news from 100+ countries, every 15 min',
+    label: 'Global Expansion',
+    desc: 'International DC construction, investment & greenfield announcements',
     Icon: Database,
   },
 ];
@@ -75,12 +75,14 @@ export default function IngestPanel() {
   const [totalSignals, setTotalSignals] = useState<number | null>(null);
 
   const loadLog = useCallback(async () => {
-    const res = await fetch('/api/ingest');
-    if (res.ok) setLog(await res.json());
-    const sigRes = await fetch('/api/signals');
-    if (sigRes.ok) {
-      const sigs = await sigRes.json();
-      setTotalSignals(Array.isArray(sigs) ? sigs.length : null);
+    const [logRes, statsRes] = await Promise.all([
+      fetch('/api/ingest'),
+      fetch('/api/remote-control'),
+    ]);
+    if (logRes.ok) setLog(await logRes.json());
+    if (statsRes.ok) {
+      const stats = await statsRes.json();
+      setTotalSignals(typeof stats.signalCount === 'number' ? stats.signalCount : null);
     }
   }, []);
 
@@ -122,7 +124,7 @@ export default function IngestPanel() {
       <div className="flex items-center justify-between px-4 py-2.5 border-b border-[#1e1e2e] bg-[#0d0d14] shrink-0">
         <div>
           <h2 className="text-sm font-semibold text-white">Live Data Ingestion</h2>
-          <p className="text-[10px] text-slate-500 mt-0.5">5 live sources · SEC EDGAR · FERC · EIA · RSS · GDELT</p>
+          <p className="text-[10px] text-slate-500 mt-0.5">5 live sources · SEC EDGAR · RSS · EIA · Power Grid · Global Intel</p>
         </div>
         <div className="flex items-center gap-3">
           {totalSignals !== null && (
