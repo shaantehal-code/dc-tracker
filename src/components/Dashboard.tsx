@@ -156,9 +156,10 @@ export default function Dashboard({ initialSites }: Props) {
           <button
             onClick={() => setShowPanel(v => !v)}
             title={showPanel ? 'Hide panel' : 'Show panel'}
-            className="flex items-center justify-center w-7 h-7 rounded text-slate-500 hover:text-white hover:bg-[#1a1a2e] transition-colors"
+            className="flex items-center gap-1.5 px-2 py-1.5 bg-[#1a1a2e] hover:bg-[#252540] border border-[#2d2d4e] rounded text-slate-400 hover:text-white transition-colors"
           >
-            {showPanel ? <PanelLeftClose size={15} /> : <PanelLeftOpen size={15} />}
+            {showPanel ? <PanelLeftClose size={13} /> : <PanelLeftOpen size={13} />}
+            <span className="text-xs md:hidden">{showPanel ? 'Hide' : 'Show'}</span>
           </button>
           {/* Icon-only on mobile, text+icon on desktop */}
           <button onClick={seedDb} title="Seed DB"
