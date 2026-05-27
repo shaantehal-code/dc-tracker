@@ -11,23 +11,38 @@ const EDGAR_BASE = 'https://www.sec.gov';
 
 // DC-specific public companies to amplify signals for (CIK → ticker)
 const DC_COMPANIES: Record<string, string> = {
+  // Pure-play data center REITs & operators
   '1101239': 'EQIX',    // Equinix
   '1297996': 'DLR',     // Digital Realty
   '1020569': 'IRM',     // Iron Mountain
+  '1591698': 'CONE',    // CyrusOne (now private)
+  '1411059': 'QTS',     // QTS Realty (now private)
+  '1626878': 'SWCH',    // Switch Inc (now private)
+  // AI/cloud operators
   '1960944': 'CRWV',    // CoreWeave
   '1743745': 'APLD',    // Applied Digital
   '1787640': 'CIFR',    // Cipher Mining
   '1839175': 'CORZ',    // Core Scientific
   '1507605': 'MARA',    // MARA Holdings
   '1514281': 'RIOT',    // Riot Platforms
+  '1835016': 'BTBT',    // Bit Digital
+  // Hyperscalers
   '1018724': 'AMZN',    // Amazon (AWS)
   '789019':  'MSFT',    // Microsoft
   '1652044': 'GOOGL',   // Alphabet
   '1326801': 'META',    // Meta
   '320193':  'AAPL',    // Apple
   '1045810': 'NVDA',    // Nvidia
+  '1467858': 'TSLA',    // Tesla (Dojo supercomputer)
+  // Power/utilities
+  '78814':   'D',       // Dominion Energy (VA grid)
+  '1551152': 'VST',     // Vistra (nuclear power)
+  '1013871': 'NRG',     // NRG Energy
+  '1168165': 'AEE',     // Ameren (MO/IL)
+  // International DC operators
   '1569158': 'GDS',     // GDS Holdings (China)
-  '1372514': 'VNET',    // Vnet Group
+  '1372514': 'VNET',    // Vnet Group (China)
+  '1410172': 'KDCREIT', // Keppel DC REIT (SG - proxy)
 };
 
 interface EdgarHit {
@@ -74,6 +89,10 @@ export async function runSecEdgar(sites: SiteStub[]): Promise<RawSignal[]> {
     { q: '"hyperscale" "data center" "expansion"', forms: '8-K' },
     { q: '"nuclear" "data center" OR "co-location" "power purchase"', forms: '8-K' },
     { q: '"data center" "greenfield" OR "campus" "announced"', forms: '8-K,10-K' },
+    { q: '"AI campus" OR "AI data center" "megawatt" OR "gigawatt"', forms: '8-K' },
+    { q: '"data center" "land" "acquisition" OR "purchase" "acres"', forms: '8-K' },
+    { q: '"colocation" OR "co-location" "lease" "megawatt" "data center"', forms: '8-K' },
+    { q: '"data center" "power" "agreement" "utility"', forms: '8-K,10-K' },
   ];
 
   for (const { q, forms } of queries) {

@@ -1,52 +1,52 @@
 /**
  * Power Grid & Interconnection intelligence source.
- * Uses Google News RSS to find PPA deals, nuclear power agreements,
- * grid interconnection events, and utility-scale power news for data centers.
- * (Replaces the unreachable FERC EFTS endpoint.)
+ * Runs targeted Google News RSS queries per US state/region to find
+ * PPA deals, nuclear agreements, grid interconnection events.
+ * Site-specific queries instead of generic matching — higher precision.
  */
 import type { RawSignal, SiteStub } from './types';
-import { buildSiteIndex, matchText } from './site-matcher';
 
 const GNEWS_RSS = 'https://news.google.com/rss/search';
 
-// Power/grid queries that complement the trade-pub RSS feeds
-const POWER_QUERIES = [
-  'data center "power purchase agreement" megawatt',
-  'data center nuclear power deal gigawatt utility',
-  'hyperscale "grid interconnection" OR "transmission upgrade" megawatt',
-  'data center "utility deal" OR "energy deal" gigawatt announced',
-  '"AI campus" OR "AI data center" power megawatt utility construction',
-  'data center "co-location" "nuclear" OR "SMR" power deal',
+// US state/region → targeted power query with mustContain location validation
+const REGION_QUERIES: Array<{ location: string; query: string; mustContain: string[]; siteHints: string[] }> = [
+  { location: 'Virginia',      query: 'Virginia "data center" power megawatt utility Dominion',          mustContain: ['virginia','dominion','ashburn','loudoun'],       siteHints: ['loudoun-va','pwc-va','stafford-va','richmond-va','iron-mountain-nova'] },
+  { location: 'Ohio',          query: 'Ohio "data center" power megawatt AEP FirstEnergy',               mustContain: ['ohio','aep','firstenergy','columbus'],           siteHints: ['new-albany-oh','killen-oh'] },
+  { location: 'Texas',         query: 'Texas "data center" power megawatt ERCOT CPS interconnection',    mustContain: ['texas','ercot','cps','oncor'],                   siteHints: ['san-antonio-tx','allen-tx','stargate-tx','coreweave-plano','cipher-odessa'] },
+  { location: 'Pennsylvania',  query: 'Pennsylvania "data center" nuclear power megawatt PPL PECO',      mustContain: ['pennsylvania','ppl','peco','susquehanna'],        siteHints: ['homer-city-pa','nuclear-berwick-pa','talen-nuclear-pa'] },
+  { location: 'Nevada',        query: 'Nevada OR "Las Vegas" "data center" power megawatt NV Energy',    mustContain: ['nevada','las vegas','nv energy','reno'],          siteHints: ['henderson-nv','reno-nv'] },
+  { location: 'Washington',    query: 'Washington OR Quincy OR Wenatchee "data center" power BPA',       mustContain: ['washington','quincy','wenatchee','bpa','seattle'], siteHints: ['george-wa','quincy-wa','sabey-quincy','seattle-wa'] },
+  { location: 'Arizona',       query: 'Arizona OR Phoenix "data center" power megawatt APS SRP',         mustContain: ['arizona','phoenix','chandler','aps','srp'],       siteHints: ['phoenix-mesa-az','goodyear-az','tucson-az','aligned-chandler-az','navajo-gs-az'] },
+  { location: 'Utah',          query: 'Utah "data center" power megawatt Rocky Mountain Power',          mustContain: ['utah','bluffdale','lehi'],                       siteHints: ['bluffdale-ut','lehi-ut','novva-utah'] },
+  { location: 'Oregon',        query: 'Oregon OR Portland "data center" power BPA hydro megawatt',       mustContain: ['oregon','portland','hillsboro','umatilla'],       siteHints: ['umatilla-or','hillsboro-or'] },
+  { location: 'Tennessee',     query: 'Tennessee OR Memphis "data center" power megawatt TVA',           mustContain: ['tennessee','memphis','clarksville','tva'],        siteHints: ['memphis-tn','clarksville-tn','smyrna-tn','xai-memphis'] },
+  { location: 'Iowa',          query: 'Iowa "data center" power megawatt MidAmerican Energy',            mustContain: ['iowa','waukee','midamerican'],                   siteHints: ['waukee-ia'] },
+  { location: 'Wyoming',       query: 'Wyoming OR Cheyenne "data center" power megawatt Xcel',           mustContain: ['wyoming','cheyenne'],                           siteHints: ['cheyenne-wy'] },
+  { location: 'Georgia',       query: 'Georgia OR Atlanta "data center" power megawatt Georgia Power',   mustContain: ['georgia','atlanta'],                            siteHints: ['atlanta-douglas-ga'] },
+  { location: 'NorthCarolina', query: '"Research Triangle" OR "RTP" "data center" power Duke Energy',    mustContain: ['rtp','research triangle','carolina','duke energy'],siteHints: ['rtp-nc'] },
+  { location: 'NewJersey',     query: '"New Jersey" OR Secaucus OR Parsippany "data center" power',      mustContain: ['jersey','secaucus','parsippany'],                siteHints: ['secaucus-nj'] },
+  { location: 'Florida',       query: 'Miami OR Florida "data center" power megawatt FPL',               mustContain: ['miami','florida','fpl'],                         siteHints: ['miami-fl'] },
 ];
 
-const HIGH_VALUE_TERMS = [
-  'megawatt','gigawatt','mw','gw','nuclear','ppa','interconnection',
-  'transmission','hyperscale','campus','utility','offtake','reactor',
-  'smr','solar','wind','storage','grid','power',
-];
+const HIGH_VALUE_TERMS = ['megawatt','gigawatt','mw','gw','ppa','interconnection','transmission','campus','utility','offtake','reactor','smr','nuclear','power','substation'];
 
-interface GNewsItem {
-  title: string;
-  link: string;
-  pubDate: string;
-  description: string;
-}
+interface GNewsItem { title: string; link: string; pubDate: string; description: string }
 
 function parseGNewsRSS(xml: string): GNewsItem[] {
   const items: GNewsItem[] = [];
-  const itemBlocks = xml.match(/<item>([\s\S]*?)<\/item>/g) || [];
-  for (const block of itemBlocks) {
-    const title = (block.match(/<title>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/title>/) || [])[1]?.trim() || '';
-    const link = (block.match(/<link>([\s\S]*?)<\/link>/) || [])[1]?.trim() || '';
-    const pubDate = (block.match(/<pubDate>([\s\S]*?)<\/pubDate>/) || [])[1]?.trim() || '';
-    const desc = (block.match(/<description>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/description>/) || [])[1]?.trim() || '';
+  const blocks = xml.match(/<item>([\s\S]*?)<\/item>/g) || [];
+  for (const b of blocks) {
+    const title = (b.match(/<title>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/title>/) || [])[1]?.trim() || '';
+    const link  = (b.match(/<link>([\s\S]*?)<\/link>/) || [])[1]?.trim() || '';
+    const pubDate = (b.match(/<pubDate>([\s\S]*?)<\/pubDate>/) || [])[1]?.trim() || '';
+    const desc = (b.match(/<description>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/description>/) || [])[1]?.trim() || '';
     if (title) items.push({ title, link, pubDate, description: desc });
   }
   return items;
 }
 
-function scoreItem(title: string): number {
-  const low = title.toLowerCase();
+function scoreItem(title: string, description: string): number {
+  const low = (title + ' ' + description).toLowerCase();
   return HIGH_VALUE_TERMS.reduce((n, t) => n + (low.includes(t) ? 1 : 0), 0);
 }
 
@@ -56,41 +56,46 @@ function parseDate(pubDate: string): string {
 }
 
 export async function runFerc(sites: SiteStub[]): Promise<RawSignal[]> {
-  const index = buildSiteIndex(sites);
+  const siteMap = new Map(sites.map(s => [s.id, s]));
   const signals: RawSignal[] = [];
   const seen = new Set<string>();
 
-  for (const q of POWER_QUERIES) {
+  for (const { query, mustContain, siteHints } of REGION_QUERIES) {
     let xml = '';
     try {
-      const url = `${GNEWS_RSS}?q=${encodeURIComponent(q)}&hl=en-US&gl=US&ceid=US:en`;
+      const url = `${GNEWS_RSS}?q=${encodeURIComponent(query)}&hl=en-US&gl=US&ceid=US:en`;
       const res = await fetch(url, {
         headers: { 'User-Agent': 'Mozilla/5.0 (compatible; DC-Tracker/1.0)' },
         signal: AbortSignal.timeout(10000),
       });
       if (!res.ok) continue;
       xml = await res.text();
-      await new Promise(r => setTimeout(r, 200));
+      await new Promise(r => setTimeout(r, 150));
     } catch { continue; }
 
     const items = parseGNewsRSS(xml);
-    for (const item of items.slice(0, 20)) {
+    const targetSites = siteHints.filter(id => siteMap.has(id));
+    if (targetSites.length === 0) continue;
+
+    for (const item of items.slice(0, 12)) {
       const dedupKey = item.link || item.title.slice(0, 80);
       if (seen.has(dedupKey)) continue;
+
+      // Require at least one location keyword in the article text
+      const fullText = (item.title + ' ' + item.description).toLowerCase();
+      const locationMatch = mustContain.some(kw => fullText.includes(kw.toLowerCase()));
+      if (!locationMatch) continue;
+
       seen.add(dedupKey);
 
-      const score = scoreItem(item.title);
+      const score = scoreItem(item.title, item.description);
       if (score < 2) continue;
 
-      const matched = matchText(item.title + ' ' + item.description, index);
-      if (matched.length === 0) continue;
-
-      const date = parseDate(item.pubDate);
-      // Strip "- Publisher Name" suffix from Google News titles
       const cleanTitle = item.title.replace(/\s+-\s+[^-]+$/, '').trim();
       const description = `Power Grid: ${cleanTitle}`;
+      const date = parseDate(item.pubDate);
 
-      for (const siteId of matched) {
+      for (const siteId of targetSites) {
         signals.push({
           siteId,
           type: 'interconnection_request',

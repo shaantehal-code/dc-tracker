@@ -16,6 +16,15 @@ const STOP_WORDS = new Set([
   'latam','gateway','cable','cables','hub','hubs','risk','zone','corridor','region',
   'hurricane','nuclear','renewable','solar','wind','hydro','atomic',
   'largest','fastest','growing','biggest','major','main','primary','leading',
+  // Geographic region names (too generic)
+  'southeast','southwest','northeast','northwest','midwest','apac','emea','mena',
+  'americas','pacific','atlantic','continent','continental',
+  // Major telecos present in many sites/articles
+  'verizon','comcast','sprint','tmobile','centurylink','lumen',
+  // Mega-operators present in 10+ sites — too generic for location discrimination
+  // (these are matched via CIK in SEC EDGAR instead)
+  'equinix','amazon','google','alphabet','microsoft','nvidia','meta','facebook',
+  'ntt','ironmountain','digitalrealty','vantage','cyrusone','coresite','cologix',
 ]);
 
 function tokenize(text: string): string[] {
@@ -61,9 +70,10 @@ export function buildSiteIndex(sites: SiteStub[]): Index {
       if (compressed.length >= 6) add(compressed, s.id);
     }
 
-    // Notable proper nouns from notes (≥5 chars, capitalized)
-    const properNouns = s.notes.match(/\b[A-Z][a-z]{4,}\b/g) || [];
-    for (const noun of properNouns.slice(0, 30)) add(noun, s.id);
+    // Specific proper nouns from notes (8+ chars, capitalized, not a stop word)
+    // Long requirement filters out generic English words like Sunrise, Strong, Trade, etc.
+    const properNouns = s.notes.match(/\b[A-Z][a-z]{7,}\b/g) || [];
+    for (const noun of properNouns.slice(0, 20)) add(noun, s.id);
   }
 
   return index;
@@ -71,20 +81,25 @@ export function buildSiteIndex(sites: SiteStub[]): Index {
 
 export function matchText(text: string, index: Index, maxResults = 3): string[] {
   const scores = new Map<string, number>();
+  const discriminating = new Set<string>(); // sites that matched a rare (≤3 sites) token
   const tokens = tokenize(text);
 
   for (const token of tokens) {
     const hits = index.get(token);
     if (!hits) continue;
-    // Rare tokens (few sites match) score higher
-    const weight = hits.size <= 2 ? 3 : hits.size <= 5 ? 2 : 1;
+    // Rare tokens (few sites match) score higher and mark as discriminating
+    const weight = hits.size <= 2 ? 4 : hits.size <= 5 ? 2 : 1;
     hits.forEach(siteId => {
       scores.set(siteId, (scores.get(siteId) || 0) + weight);
+      if (hits.size <= 3) discriminating.add(siteId);
     });
   }
 
   const entries: [string, number][] = [];
-  scores.forEach((score, id) => { if (score >= 3) entries.push([id, score]); });
+  scores.forEach((score, id) => {
+    // Require score ≥ 4 AND at least one discriminating (rare) token match
+    if (score >= 4 && discriminating.has(id)) entries.push([id, score]);
+  });
   return entries
     .sort((a, b) => b[1] - a[1])
     .slice(0, maxResults)
