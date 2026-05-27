@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
-import { RefreshCw, ExternalLink } from 'lucide-react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
+import { RefreshCw, ExternalLink, Search } from 'lucide-react';
 
 interface SignalRow {
   id: number;
@@ -46,6 +46,7 @@ export default function SignalFeed({ siteId }: { siteId?: string }) {
   const [loading, setLoading] = useState(false);
   const [window, setWindow] = useState<Window>('all');
   const [typeFilter, setTypeFilter] = useState('');
+  const [search, setSearch] = useState('');
 
   const load = useCallback(async (w: Window) => {
     setLoading(true);
@@ -60,7 +61,18 @@ export default function SignalFeed({ siteId }: { siteId?: string }) {
   useEffect(() => { load(window); }, [load, window]);
 
   const types = Array.from(new Set(signals.map(s => s.type))).sort();
-  const visible = typeFilter ? signals.filter(s => s.type === typeFilter) : signals;
+  const visible = useMemo(() => {
+    let list = typeFilter ? signals.filter(s => s.type === typeFilter) : signals;
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      list = list.filter(s =>
+        s.description.toLowerCase().includes(q) ||
+        s.site_name.toLowerCase().includes(q) ||
+        s.type.includes(q)
+      );
+    }
+    return list;
+  }, [signals, typeFilter, search]);
 
   return (
     <div className="flex flex-col h-full">
@@ -72,6 +84,23 @@ export default function SignalFeed({ siteId }: { siteId?: string }) {
           <button onClick={() => load(window)} className="text-slate-500 hover:text-white" disabled={loading}>
             <RefreshCw size={12} className={loading ? 'animate-spin' : ''} />
           </button>
+        </div>
+      </div>
+
+      {/* Search bar */}
+      <div className="px-3 py-1.5 border-b border-[#1e1e2e] shrink-0">
+        <div className="flex items-center gap-1.5 bg-[#0d0d14] border border-[#1e1e2e] rounded px-2 py-1">
+          <Search size={11} className="text-slate-600 shrink-0" />
+          <input
+            type="text"
+            placeholder="Search signals…"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            className="flex-1 bg-transparent text-[11px] text-slate-300 placeholder-slate-600 outline-none"
+          />
+          {search && (
+            <button onClick={() => setSearch('')} className="text-slate-600 hover:text-slate-400 text-[10px]">✕</button>
+          )}
         </div>
       </div>
 

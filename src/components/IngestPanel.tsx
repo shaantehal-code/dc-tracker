@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { Play, RefreshCw, CheckCircle, XCircle, Loader, Zap, Database, Globe, Radio, FileText } from 'lucide-react';
+import { Play, RefreshCw, CheckCircle, XCircle, Loader, Zap } from 'lucide-react';
 
 interface LogRow {
   id: number;
@@ -13,44 +13,7 @@ interface LogRow {
   output: string;
 }
 
-const SOURCES = [
-  {
-    key: 'all',
-    label: 'Run All Sources',
-    desc: 'SEC EDGAR + RSS + EIA + FERC + GDELT in sequence',
-    Icon: Zap,
-  },
-  {
-    key: 'sec_edgar',
-    label: 'SEC EDGAR',
-    desc: '8-K / 10-K filings — 15+ tracked DC companies',
-    Icon: FileText,
-  },
-  {
-    key: 'news_rss',
-    label: 'News & RSS',
-    desc: 'DCD, The Register, DCFrontier, Bisnow + more',
-    Icon: Globe,
-  },
-  {
-    key: 'eia',
-    label: 'EIA Power Data',
-    desc: 'US electricity prices by state (needs EIA_API_KEY env var)',
-    Icon: Zap,
-  },
-  {
-    key: 'ferc',
-    label: 'Power Grid Intel',
-    desc: 'PPA deals, nuclear agreements, grid interconnection news',
-    Icon: Radio,
-  },
-  {
-    key: 'gdelt',
-    label: 'Global Expansion',
-    desc: 'International DC construction, investment & greenfield announcements',
-    Icon: Database,
-  },
-];
+interface SourceMeta { key: string; label: string; desc: string }
 
 const STATUS_CONFIG = {
   running:   { icon: <Loader size={11} className="animate-spin text-yellow-400" />, color: 'text-yellow-400', bg: 'bg-yellow-900/10' },
@@ -69,12 +32,14 @@ function timeSince(iso: string): string {
 }
 
 export default function IngestPanel() {
-  const [log, setLog] = useState<LogRow[]>([]);
-  const [running, setRunning] = useState<string | null>(null);
+  const [log, setLog]           = useState<LogRow[]>([]);
+  const [sources, setSources]   = useState<SourceMeta[]>([]);
+  const [running, setRunning]   = useState<string | null>(null);
   const [expanded, setExpanded] = useState<number | null>(null);
   const [totalSignals, setTotalSignals] = useState<number | null>(null);
+  const [siteCount, setSiteCount]       = useState<number | null>(null);
 
-  const loadLog = useCallback(async () => {
+  const loadStats = useCallback(async () => {
     const [logRes, statsRes] = await Promise.all([
       fetch('/api/ingest'),
       fetch('/api/remote-control'),
@@ -82,15 +47,17 @@ export default function IngestPanel() {
     if (logRes.ok) setLog(await logRes.json());
     if (statsRes.ok) {
       const stats = await statsRes.json();
-      setTotalSignals(typeof stats.signalCount === 'number' ? stats.signalCount : null);
+      if (typeof stats.signalCount === 'number') setTotalSignals(stats.signalCount);
+      if (typeof stats.siteCount   === 'number') setSiteCount(stats.siteCount);
+      if (Array.isArray(stats.sources)) setSources(stats.sources);
     }
   }, []);
 
   useEffect(() => {
-    loadLog();
-    const interval = setInterval(loadLog, 4000);
-    return () => clearInterval(interval);
-  }, [loadLog]);
+    loadStats();
+    const iv = setInterval(loadStats, 4000);
+    return () => clearInterval(iv);
+  }, [loadStats]);
 
   const trigger = useCallback(async (key: string) => {
     if (running) return;
@@ -110,55 +77,76 @@ export default function IngestPanel() {
           if (latest && latest.status !== 'running') {
             clearInterval(poll);
             setRunning(null);
+            loadStats();
           }
         }
       }, 2500);
-      setTimeout(() => { clearInterval(poll); setRunning(null); }, 180000);
+      setTimeout(() => { clearInterval(poll); setRunning(null); }, 300000);
     } catch {
       setRunning(null);
     }
-  }, [running]);
+  }, [running, loadStats]);
+
+  const displaySources: SourceMeta[] = sources.length > 0 ? sources : [];
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
+      {/* Header */}
       <div className="flex items-center justify-between px-4 py-2.5 border-b border-[#1e1e2e] bg-[#0d0d14] shrink-0">
         <div>
           <h2 className="text-sm font-semibold text-white">Live Data Ingestion</h2>
-          <p className="text-[10px] text-slate-500 mt-0.5">5 live sources · SEC EDGAR · RSS · EIA · Power Grid · Global Intel</p>
+          <p className="text-[10px] text-slate-500 mt-0.5">
+            {displaySources.length > 0 ? `${displaySources.length} sources` : 'Loading…'} · auto-runs every 6h
+          </p>
         </div>
         <div className="flex items-center gap-3">
-          {totalSignals !== null && (
-            <div className="text-right">
-              <div className="text-lg font-bold text-blue-400">{totalSignals}</div>
-              <div className="text-[9px] text-slate-600">signals in DB</div>
-            </div>
-          )}
-          <button onClick={loadLog} className="text-slate-500 hover:text-white transition-colors">
+          <div className="flex gap-3">
+            {siteCount !== null && (
+              <div className="text-right">
+                <div className="text-lg font-bold text-slate-300">{siteCount}</div>
+                <div className="text-[9px] text-slate-600">sites</div>
+              </div>
+            )}
+            {totalSignals !== null && (
+              <div className="text-right">
+                <div className="text-lg font-bold text-blue-400">{totalSignals.toLocaleString()}</div>
+                <div className="text-[9px] text-slate-600">signals</div>
+              </div>
+            )}
+          </div>
+          <button onClick={loadStats} className="text-slate-500 hover:text-white transition-colors">
             <RefreshCw size={13} />
           </button>
         </div>
       </div>
 
       <div className="flex-1 overflow-y-auto">
-        <div className="p-3 border-b border-[#1e1e2e]">
+        {/* Run All button */}
+        <div className="p-3 pb-0">
+          <button
+            onClick={() => trigger('all')}
+            disabled={!!running}
+            className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded bg-blue-700 hover:bg-blue-600 disabled:opacity-40 text-white text-xs font-semibold transition-colors mb-3"
+          >
+            {running === 'all' ? <Loader size={12} className="animate-spin" /> : <Zap size={12} />}
+            Run All {displaySources.length > 0 ? `${displaySources.length} Sources` : 'Sources'}
+          </button>
+
+          {/* Individual source buttons — dynamic from API */}
           <div className="flex flex-col gap-2">
-            {SOURCES.map(({ key, label, desc, Icon }) => {
+            {displaySources.map(({ key, label, desc }) => {
               const last = log.find(r => r.script === key);
               const isRunning = running === key;
               const cfg = last ? STATUS_CONFIG[last.status] : null;
-              const isAllBtn = key === 'all';
 
               return (
                 <div key={key}
                   className="flex items-center justify-between rounded border border-[#2d2d4e] bg-[#0a0a1a] p-2.5 hover:border-[#3d3d6e] transition-colors">
-                  <div className="flex items-center gap-2.5 flex-1 min-w-0">
-                    <Icon size={14} className="text-slate-500 shrink-0" />
-                    <div className="min-w-0">
-                      <div className="text-xs font-medium text-slate-200">{label}</div>
-                      <div className="text-[10px] text-slate-600 truncate">{desc}</div>
-                    </div>
+                  <div className="flex-1 min-w-0 mr-2">
+                    <div className="text-xs font-medium text-slate-200">{label}</div>
+                    <div className="text-[10px] text-slate-600 truncate">{desc}</div>
                   </div>
-                  <div className="flex items-center gap-2 shrink-0 ml-2">
+                  <div className="flex items-center gap-2 shrink-0">
                     {cfg && (
                       <div className={`flex items-center gap-1 text-[10px] ${cfg.color}`}>
                         {cfg.icon}
@@ -171,12 +159,10 @@ export default function IngestPanel() {
                     <button
                       onClick={() => trigger(key)}
                       disabled={!!running}
-                      className={`flex items-center gap-1 px-2.5 py-1 rounded text-[11px] font-medium text-white transition-colors disabled:opacity-40 ${
-                        isAllBtn ? 'bg-blue-700 hover:bg-blue-600' : 'bg-[#1a1a2e] hover:bg-[#252540]'
-                      }`}
+                      className="flex items-center gap-1 px-2.5 py-1 rounded text-[11px] font-medium text-white bg-[#1a1a2e] hover:bg-[#252540] transition-colors disabled:opacity-40"
                     >
                       {isRunning ? <Loader size={10} className="animate-spin" /> : <Play size={10} />}
-                      {isAllBtn ? 'Run All' : 'Run'}
+                      Run
                     </button>
                   </div>
                 </div>
@@ -185,7 +171,8 @@ export default function IngestPanel() {
           </div>
         </div>
 
-        <div className="p-3">
+        {/* Run history */}
+        <div className="p-3 mt-1">
           <div className="text-[10px] text-slate-500 uppercase tracking-wider mb-2">Run History</div>
           {log.length === 0 && (
             <div className="text-xs text-slate-600 py-4 text-center">No runs yet — click Run above.</div>

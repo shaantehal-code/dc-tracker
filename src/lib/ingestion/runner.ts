@@ -26,7 +26,7 @@ export const SOURCES: Record<string, {
   },
   news_rss: {
     label: 'News & RSS',
-    desc: 'DCD, The Register, DCFrontier, Bisnow + 16 more feeds & targeted searches',
+    desc: 'DCD, The Register, DCFrontier + 22 more trade/CRE/energy feeds & GNews searches',
     run: runNewsRss,
   },
   eia: {
@@ -181,6 +181,47 @@ export async function runSource(db: DatabaseSync, sourceKey: string): Promise<In
   };
 }
 
+// Post alert to WEBHOOK_URL (env) when watchlisted sites get new high-confidence signals.
+// Payload: { event, site, signals[] } — compatible with Slack/Discord/Make/Zapier webhooks.
+async function fireWebhookAlerts(db: DatabaseSync, newSignals: RawSignal[]): Promise<void> {
+  const webhookUrl = process.env.WEBHOOK_URL;
+  if (!webhookUrl || newSignals.length === 0) return;
+
+  const highConf = newSignals.filter(s => s.confidence === 'high');
+  if (highConf.length === 0) return;
+
+  // Find which are for watchlisted sites
+  const siteIds = Array.from(new Set(highConf.map(s => s.siteId)));
+  const placeholders = siteIds.map(() => '?').join(',');
+  const watched = db.prepare(
+    `SELECT id, name FROM sites WHERE id IN (${placeholders}) AND watchlisted = 1`
+  ).all(...siteIds) as { id: string; name: string }[];
+
+  if (watched.length === 0) return;
+
+  for (const site of watched) {
+    const siteSignals = highConf.filter(s => s.siteId === site.id);
+    const payload = {
+      event: 'new_signals',
+      site: { id: site.id, name: site.name },
+      signals: siteSignals.map(s => ({
+        type: s.type, date: s.date,
+        description: s.description, sourceUrl: s.sourceUrl,
+      })),
+      count: siteSignals.length,
+      timestamp: new Date().toISOString(),
+    };
+    try {
+      await fetch(webhookUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+        signal: AbortSignal.timeout(5000),
+      });
+    } catch { /* webhook failures are non-fatal */ }
+  }
+}
+
 // Decay opportunity scores for sites with no recent high-confidence signals.
 // Runs once per full cycle — score drifts toward 30 (floor) if inactive 30+ days.
 function decayOpportunityScores(db: DatabaseSync): void {
@@ -216,5 +257,24 @@ export async function runAllSources(db: DatabaseSync): Promise<IngestionResult[]
     }
   }
   decayOpportunityScores(db);
+
+  // Collect all new signals from this run and fire webhook for watchlisted sites
+  const allNewSignals: RawSignal[] = [];
+  // Re-query signals inserted in the last 5 minutes as a proxy for "this run"
+  try {
+    const fresh = db.prepare(
+      `SELECT site_id, type, date, description, source_url, confidence FROM signals
+       WHERE auto_generated = 1 AND created_at >= datetime('now', '-5 minutes')`
+    ).all() as any[];
+    for (const r of fresh) {
+      allNewSignals.push({
+        siteId: r.site_id, type: r.type, date: r.date,
+        description: r.description, sourceUrl: r.source_url ?? undefined,
+        confidence: r.confidence,
+      });
+    }
+    await fireWebhookAlerts(db, allNewSignals);
+  } catch { /* non-fatal */ }
+
   return results;
 }

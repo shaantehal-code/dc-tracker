@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb, getAllSites, getIngestionLog } from '@/lib/db';
 import { seedDatabase } from '@/lib/seed';
+import { SOURCES } from '@/lib/ingestion/runner';
 
 export const dynamic = 'force-dynamic';
 
@@ -13,7 +14,8 @@ export function GET() {
     const siteCount = (db.prepare('SELECT COUNT(*) as n FROM sites').get() as any).n;
     const signalCount = (db.prepare('SELECT COUNT(*) as n FROM signals').get() as any).n;
     const ingestLog = getIngestionLog(db, 5);
-    return NextResponse.json({ siteCount, signalCount, ingestLog, commandLog: [...commandLog].reverse().slice(0, 20) });
+    const sources = Object.entries(SOURCES).map(([key, s]) => ({ key, label: s.label, desc: s.desc }));
+    return NextResponse.json({ siteCount, signalCount, ingestLog, commandLog: [...commandLog].reverse().slice(0, 20), sources });
   } catch (e: any) {
     return NextResponse.json({ error: e.message }, { status: 500 });
   }
