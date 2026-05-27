@@ -182,7 +182,7 @@ export async function runSource(db: DatabaseSync, sourceKey: string): Promise<In
 }
 
 // Post alert to WEBHOOK_URL (env) when watchlisted sites get new high-confidence signals.
-// Payload: { event, site, signals[] } — compatible with Slack/Discord/Make/Zapier webhooks.
+// Auto-detects Discord vs Slack/generic by URL pattern and formats accordingly.
 async function fireWebhookAlerts(db: DatabaseSync, newSignals: RawSignal[]): Promise<void> {
   const webhookUrl = process.env.WEBHOOK_URL;
   if (!webhookUrl || newSignals.length === 0) return;
@@ -190,32 +190,65 @@ async function fireWebhookAlerts(db: DatabaseSync, newSignals: RawSignal[]): Pro
   const highConf = newSignals.filter(s => s.confidence === 'high');
   if (highConf.length === 0) return;
 
-  // Find which are for watchlisted sites
   const siteIds = Array.from(new Set(highConf.map(s => s.siteId)));
   const placeholders = siteIds.map(() => '?').join(',');
   const watched = db.prepare(
-    `SELECT id, name FROM sites WHERE id IN (${placeholders}) AND watchlisted = 1`
-  ).all(...siteIds) as { id: string; name: string }[];
+    `SELECT id, name, opportunity_score FROM sites WHERE id IN (${placeholders}) AND watchlisted = 1`
+  ).all(...siteIds) as { id: string; name: string; opportunity_score: number }[];
 
   if (watched.length === 0) return;
 
+  const isDiscord = webhookUrl.includes('discord.com/api/webhooks');
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://dc-tracker-production.up.railway.app';
+
   for (const site of watched) {
     const siteSignals = highConf.filter(s => s.siteId === site.id);
-    const payload = {
-      event: 'new_signals',
-      site: { id: site.id, name: site.name },
-      signals: siteSignals.map(s => ({
-        type: s.type, date: s.date,
-        description: s.description, sourceUrl: s.sourceUrl,
-      })),
-      count: siteSignals.length,
-      timestamp: new Date().toISOString(),
+    const sigTypeIcon: Record<string, string> = {
+      interconnection_request: '⚡', building_permit: '🏗', water_permit: '💧',
+      zoning_change: '📋', news: '📰', sec_filing: '📄', job_posting: '👔',
+      land_sale: '🏞', partner_announcement: '🤝', power_plant_retirement: '🔌',
     };
+    const sigLines = siteSignals.slice(0, 5).map(s =>
+      `${sigTypeIcon[s.type] || '📌'} **${s.type.replace(/_/g, ' ')}** · ${s.date}\n> ${s.description.slice(0, 120)}${s.sourceUrl ? `\n> [Source](${s.sourceUrl})` : ''}`
+    ).join('\n\n');
+
+    let body: string;
+
+    if (isDiscord) {
+      const embed = {
+        title: `🔔 ${site.name}`,
+        description: `**${siteSignals.length} new high-confidence signal${siteSignals.length !== 1 ? 's' : ''}** on a watchlisted site`,
+        color: 0x3b82f6,
+        fields: siteSignals.slice(0, 5).map(s => ({
+          name: `${sigTypeIcon[s.type] || '📌'} ${s.type.replace(/_/g, ' ')} · ${s.date}`,
+          value: s.description.slice(0, 200) + (s.sourceUrl ? ` [→](${s.sourceUrl})` : ''),
+          inline: false,
+        })),
+        footer: { text: `DC Tracker · opportunity score ${site.opportunity_score}` },
+        timestamp: new Date().toISOString(),
+        url: `${appUrl}`,
+      };
+      if (siteSignals.length > 5) {
+        embed.fields.push({ name: `…and ${siteSignals.length - 5} more`, value: 'Open DC Tracker for full feed', inline: false });
+      }
+      body = JSON.stringify({ embeds: [embed] });
+    } else {
+      // Generic JSON — works with Slack incoming webhooks, Make, Zapier
+      body = JSON.stringify({
+        text: `🔔 *${site.name}* — ${siteSignals.length} new high-confidence signal${siteSignals.length !== 1 ? 's' : ''}`,
+        blocks: [
+          { type: 'section', text: { type: 'mrkdwn', text: `*🔔 ${site.name}*\n${siteSignals.length} new signal${siteSignals.length !== 1 ? 's' : ''} · score ${site.opportunity_score}` } },
+          { type: 'section', text: { type: 'mrkdwn', text: sigLines || '(no details)' } },
+          { type: 'actions', elements: [{ type: 'button', text: { type: 'plain_text', text: 'Open DC Tracker' }, url: appUrl }] },
+        ],
+      });
+    }
+
     try {
       await fetch(webhookUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+        body,
         signal: AbortSignal.timeout(5000),
       });
     } catch { /* webhook failures are non-fatal */ }
