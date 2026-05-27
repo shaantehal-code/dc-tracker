@@ -41,15 +41,15 @@ export default function SiteDetail({ site, onClose, onToggleWatchlist, onSaveNot
     <div className="flex flex-col h-full bg-[#0d0d14]">
       <div className="flex items-start justify-between p-3 border-b border-[#1e1e2e]">
         <div className="flex-1 min-w-0">
-          <h2 className="text-base font-bold text-white truncate">{site.name}</h2>
+          <h2 className="text-base font-bold text-white leading-snug">{site.name}</h2>
           <p className="text-xs text-slate-500 mt-0.5">{site.city}{site.state ? `, ${site.state}` : ''}, {site.country}</p>
         </div>
-        <div className="flex items-center gap-2 ml-2">
+        <div className="flex items-center gap-3 ml-2 shrink-0">
           <button onClick={() => onToggleWatchlist(site.id)} className={site.watchlisted ? 'text-amber-400' : 'text-slate-600 hover:text-slate-300'}>
-            <Star size={16} fill={site.watchlisted ? 'currentColor' : 'none'} />
+            <Star size={18} fill={site.watchlisted ? 'currentColor' : 'none'} />
           </button>
-          <button onClick={onClose} className="text-slate-500 hover:text-white">
-            <X size={16} />
+          <button onClick={onClose} className="text-slate-400 hover:text-white p-1 -mr-1">
+            <X size={20} />
           </button>
         </div>
       </div>
