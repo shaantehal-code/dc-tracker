@@ -20,11 +20,9 @@ const FEEDS = [
   { url: 'https://www.utilitydive.com/feeds/news/',                       label: 'UtilityDive' },
   { url: 'https://www.greentechmedia.com/rss/all',                        label: 'GreenTech' },
   { url: 'https://www.renewablesnow.com/feed/',                           label: 'RenewablesNow' },
-  // Real estate / CRE
+  // Real estate / CRE (data center specific only)
   { url: 'https://www.globest.com/category/data-centers/feed/',           label: 'GlobeSt' },
-  { url: 'https://www.commercialobserver.com/feed/',                      label: 'CommObs' },
   // Cloud/hyperscaler coverage
-  { url: 'https://siliconangle.com/feed/',                                label: 'SiliconAngle' },
   { url: 'https://www.cloudpro.co.uk/feed',                               label: 'CloudPro' },
   // Google News: key targeted searches (de-duplicated from FERC/GDELT by using unique queries)
   { url: 'https://news.google.com/rss/search?q=data+center+permit+zoning+county&hl=en-US&gl=US&ceid=US:en', label: 'GNews-Permits' },
@@ -112,7 +110,7 @@ export async function runNewsRss(sites: SiteStub[]): Promise<RawSignal[]> {
     for (const item of items) {
       const text = `${item.title} ${item.description}`;
       const relevance = scoreRelevance(text);
-      if (relevance < 1) continue; // skip non-DC articles
+      if (relevance < 2) continue; // require ≥2 DC keywords to reduce noise
 
       const dedupKey = item.link || item.title.slice(0, 80);
       if (seen.has(dedupKey)) continue;

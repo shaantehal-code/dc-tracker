@@ -31,13 +31,13 @@ export const SOURCES: Record<string, {
     run: runEia,
   },
   ferc: {
-    label: 'FERC Filings',
-    desc: 'Interconnection requests & transmission upgrades',
+    label: 'Power Grid Intel',
+    desc: 'PPA deals, nuclear agreements, grid interconnection news',
     run: runFerc,
   },
   gdelt: {
-    label: 'GDELT Global News',
-    desc: 'AI-monitored news from 100+ countries, updated every 15 min',
+    label: 'Global Expansion',
+    desc: 'International DC construction, investment & greenfield announcements',
     run: runGdelt,
   },
 };
@@ -61,6 +61,14 @@ function loadSites(db: DatabaseSync): SiteStub[] {
   }));
 }
 
+// Strip source-label prefixes like "Power Grid: " or "Global Intel: [DCD] " before dedup comparison
+function normalizeDesc(description: string): string {
+  return description
+    .replace(/^(Power Grid|Global Intel|FERC filing):\s*/, '')
+    .replace(/^\[[^\]]+\]\s*/, '')
+    .trim();
+}
+
 function signalExists(db: DatabaseSync, siteId: string, description: string, sourceUrl?: string): boolean {
   if (sourceUrl) {
     const byUrl = db.prepare(
@@ -68,10 +76,10 @@ function signalExists(db: DatabaseSync, siteId: string, description: string, sou
     ).get(sourceUrl) as { n: number };
     if (byUrl.n > 0) return true;
   }
-  // Fuzzy dedup: same site + first 80 chars of description
-  const prefix = description.slice(0, 80);
+  // Fuzzy dedup: same site + first 80 chars of normalized description (strips source prefixes)
+  const prefix = normalizeDesc(description).slice(0, 80);
   const byDesc = db.prepare(
-    `SELECT COUNT(*) as n FROM signals WHERE site_id = ? AND description LIKE ?`
+    `SELECT COUNT(*) as n FROM signals WHERE site_id = ? AND REPLACE(REPLACE(description, 'Power Grid: ', ''), 'Global Intel: ', '') LIKE ?`
   ).get(siteId, prefix + '%') as { n: number };
   return byDesc.n > 0;
 }
@@ -111,6 +119,7 @@ export async function runSource(db: DatabaseSync, sourceKey: string): Promise<In
   }
 
   let signalsNew = 0;
+  const updatedSites = new Set<string>();
   if (signals.length > 0) {
     db.exec('BEGIN');
     try {
@@ -122,6 +131,14 @@ export async function runSource(db: DatabaseSync, sourceKey: string): Promise<In
         if (signalExists(db, sig.siteId, sig.description, sig.sourceUrl)) continue;
         insertSignal(db, sig);
         signalsNew++;
+        if (sig.confidence === 'high') updatedSites.add(sig.siteId);
+      }
+      // Bump opportunity score for sites with new high-confidence signals (max 95)
+      for (const siteId of Array.from(updatedSites)) {
+        db.prepare(`
+          UPDATE sites SET opportunity_score = MIN(95, opportunity_score + 3)
+          WHERE id = ?
+        `).run(siteId);
       }
       db.exec('COMMIT');
     } catch (e) {

@@ -1,13 +1,21 @@
 import type { SiteStub } from './types';
 
-// Company names that appear across many sites — too generic to use as discriminators
+// Company names and geographic terms that appear across many sites — too generic to discriminate
 const STOP_WORDS = new Set([
+  // Generic DC terms
   'data','center','centres','centers','campus','digital','cloud','tech','technology',
   'power','energy','electric','grid','park','zone','county','city','metro','north',
   'south','east','west','corp','inc','llc','ltd','group','holdings','realty','trust',
   'phase','project','campus','facility','facilities','site','sites','national','america',
   'american','global','international','infrastructure','network','networks','system',
   'systems','services','management','development','construction','building','buildings',
+  // US/international geographic adjectives that leak from tags/notes into false matches
+  'florida','texas','virginia','ohio','california','georgia','nevada','arizona','utah',
+  'oregon','washington','colorado','minnesota','illinois','tennessee','indiana','iowa',
+  'carolina','wyoming','pennsylvania','massachusetts','missouri','wisconsin','jersey',
+  'latam','gateway','cable','cables','hub','hubs','risk','zone','corridor','region',
+  'hurricane','nuclear','renewable','solar','wind','hydro','atomic',
+  'largest','fastest','growing','biggest','major','main','primary','leading',
 ]);
 
 function tokenize(text: string): string[] {
@@ -47,9 +55,10 @@ export function buildSiteIndex(sites: SiteStub[]): Index {
       if (compressed.length > 4) add(compressed, s.id);
     }
 
-    // Tags (underscored — split and index each part)
+    // Tags — index the compressed whole tag (not split parts, to avoid generic token pollution)
     for (const tag of s.tags) {
-      for (const part of tag.split('_')) add(part, s.id);
+      const compressed = tag.replace(/_/g, '');
+      if (compressed.length >= 6) add(compressed, s.id);
     }
 
     // Notable proper nouns from notes (≥5 chars, capitalized)
