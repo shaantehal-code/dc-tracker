@@ -51,7 +51,7 @@ export default function Dashboard({ initialSites }: Props) {
   const [rightTab, setRightTab] = useState<DesktopTab>('Map');
   const [mobileTab, setMobileTab] = useState<MobileTab>('sites');
   const [showMobileFilters, setShowMobileFilters] = useState(false);
-  const [showSidebar, setShowSidebar] = useState(true);
+  const [showPanel, setShowPanel] = useState(true);
 
   const filtered = useMemo(() => {
     let result = sites.filter(s => {
@@ -152,13 +152,13 @@ export default function Dashboard({ initialSites }: Props) {
           <span className="hidden sm:inline text-xs text-slate-600">Global Site Intelligence</span>
         </div>
         <div className="flex items-center gap-1.5">
-          {/* Sidebar toggle — desktop only */}
+          {/* Panel toggle — collapses sidebar on desktop, filter bar on mobile */}
           <button
-            onClick={() => setShowSidebar(v => !v)}
-            title={showSidebar ? 'Hide sidebar' : 'Show sidebar'}
-            className="hidden md:flex items-center justify-center w-7 h-7 rounded text-slate-500 hover:text-white hover:bg-[#1a1a2e] transition-colors"
+            onClick={() => setShowPanel(v => !v)}
+            title={showPanel ? 'Hide panel' : 'Show panel'}
+            className="flex items-center justify-center w-7 h-7 rounded text-slate-500 hover:text-white hover:bg-[#1a1a2e] transition-colors"
           >
-            {showSidebar ? <PanelLeftClose size={15} /> : <PanelLeftOpen size={15} />}
+            {showPanel ? <PanelLeftClose size={15} /> : <PanelLeftOpen size={15} />}
           </button>
           {/* Icon-only on mobile, text+icon on desktop */}
           <button onClick={seedDb} title="Seed DB"
@@ -193,33 +193,35 @@ export default function Dashboard({ initialSites }: Props) {
         <div className="flex-1 overflow-hidden relative flex flex-col">
           {mobileTab === 'sites' && (
             <>
-              {/* Filter toggle bar */}
-              <div className="flex items-center justify-between px-3 py-1.5 border-b border-[#1a1a2a] bg-[#0d0d14] shrink-0">
-                <span className="text-[11px] text-slate-500">{filtered.length} site{filtered.length !== 1 ? 's' : ''}</span>
-                <button
-                  onClick={() => setShowMobileFilters(v => !v)}
-                  className={`flex items-center gap-1.5 text-xs px-2 py-1 rounded border transition-colors ${showMobileFilters ? 'bg-blue-700 border-blue-600 text-white' : 'border-[#2d2d4e] text-slate-400 hover:text-white'}`}
-                >
-                  {showMobileFilters ? <X size={11} /> : <SlidersHorizontal size={11} />}
-                  {showMobileFilters ? 'Close' : 'Filters'}
-                </button>
-              </div>
-              {/* Collapsible filters */}
-              {showMobileFilters && (
+              {/* Filter bar + expandable panel — hidden when panel is collapsed via header toggle */}
+              {showPanel && (
                 <>
-                  <div className="shrink-0 overflow-y-auto max-h-[40vh] border-b border-[#1e1e2e]">
-                    <FilterPanel filters={filters} onChange={handleFilterChange} />
-                  </div>
-                  {/* Sticky "show results" footer so users can always exit the filter panel */}
-                  <div className="shrink-0 flex items-center justify-between px-3 py-2 bg-[#0d0d14] border-b border-[#1a1a2a]">
-                    <span className="text-[11px] text-slate-400">{filtered.length} result{filtered.length !== 1 ? 's' : ''}</span>
+                  <div className="flex items-center justify-between px-3 py-1.5 border-b border-[#1a1a2a] bg-[#0d0d14] shrink-0">
+                    <span className="text-[11px] text-slate-500">{filtered.length} site{filtered.length !== 1 ? 's' : ''}</span>
                     <button
-                      onClick={() => setShowMobileFilters(false)}
-                      className="text-xs px-3 py-1.5 bg-blue-700 hover:bg-blue-600 text-white rounded transition-colors"
+                      onClick={() => setShowMobileFilters(v => !v)}
+                      className={`flex items-center gap-1.5 text-xs px-2 py-1 rounded border transition-colors ${showMobileFilters ? 'bg-blue-700 border-blue-600 text-white' : 'border-[#2d2d4e] text-slate-400 hover:text-white'}`}
                     >
-                      Show results
+                      {showMobileFilters ? <X size={11} /> : <SlidersHorizontal size={11} />}
+                      {showMobileFilters ? 'Close' : 'Filters'}
                     </button>
                   </div>
+                  {showMobileFilters && (
+                    <>
+                      <div className="shrink-0 overflow-y-auto max-h-[40vh] border-b border-[#1e1e2e]">
+                        <FilterPanel filters={filters} onChange={handleFilterChange} />
+                      </div>
+                      <div className="shrink-0 flex items-center justify-between px-3 py-2 bg-[#0d0d14] border-b border-[#1a1a2a]">
+                        <span className="text-[11px] text-slate-400">{filtered.length} result{filtered.length !== 1 ? 's' : ''}</span>
+                        <button
+                          onClick={() => setShowMobileFilters(false)}
+                          className="text-xs px-3 py-1.5 bg-blue-700 hover:bg-blue-600 text-white rounded transition-colors"
+                        >
+                          Show results
+                        </button>
+                      </div>
+                    </>
+                  )}
                 </>
               )}
               <SiteList
@@ -268,7 +270,7 @@ export default function Dashboard({ initialSites }: Props) {
       {/* ── DESKTOP LAYOUT (hidden on mobile) ── */}
       <div className="hidden md:flex flex-1 overflow-hidden">
         {/* Left panel: filters + site list */}
-        <div className={`flex flex-col shrink-0 border-r border-[#1e1e2e] overflow-hidden transition-all duration-200 ${showSidebar ? 'w-[320px]' : 'w-0 border-r-0'}`}>
+        <div className={`flex flex-col shrink-0 border-r border-[#1e1e2e] overflow-hidden transition-all duration-200 ${showPanel ? 'w-[320px]' : 'w-0 border-r-0'}`}>
           <FilterPanel filters={filters} onChange={handleFilterChange} />
           <div className="text-[10px] text-slate-600 px-3 py-1 border-b border-[#1a1a2a]">
             {filtered.length} site{filtered.length !== 1 ? 's' : ''}
