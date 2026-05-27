@@ -10,7 +10,7 @@ import SiteDetail from './SiteDetail';
 import SignalFeed from './SignalFeed';
 import IngestPanel from './IngestPanel';
 import RemoteControlPanel from './RemoteControlPanel';
-import { List, Map as MapIcon, Zap, Upload, Radio, SlidersHorizontal, Database, FileDown } from 'lucide-react';
+import { List, Map as MapIcon, Zap, Upload, Radio, SlidersHorizontal, Database, FileDown, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 
 const MapView = dynamic(() => import('./MapView'), { ssr: false });
 
@@ -51,6 +51,7 @@ export default function Dashboard({ initialSites }: Props) {
   const [rightTab, setRightTab] = useState<DesktopTab>('Map');
   const [mobileTab, setMobileTab] = useState<MobileTab>('sites');
   const [showMobileFilters, setShowMobileFilters] = useState(false);
+  const [showSidebar, setShowSidebar] = useState(true);
 
   const filtered = useMemo(() => {
     let result = sites.filter(s => {
@@ -151,6 +152,14 @@ export default function Dashboard({ initialSites }: Props) {
           <span className="hidden sm:inline text-xs text-slate-600">Global Site Intelligence</span>
         </div>
         <div className="flex items-center gap-1.5">
+          {/* Sidebar toggle — desktop only */}
+          <button
+            onClick={() => setShowSidebar(v => !v)}
+            title={showSidebar ? 'Hide sidebar' : 'Show sidebar'}
+            className="hidden md:flex items-center justify-center w-7 h-7 rounded text-slate-500 hover:text-white hover:bg-[#1a1a2e] transition-colors"
+          >
+            {showSidebar ? <PanelLeftClose size={15} /> : <PanelLeftOpen size={15} />}
+          </button>
           {/* Icon-only on mobile, text+icon on desktop */}
           <button onClick={seedDb} title="Seed DB"
             className="flex items-center gap-1.5 px-2 py-1.5 bg-[#1a1a2e] hover:bg-[#252540] border border-[#2d2d4e] rounded text-slate-400 hover:text-white transition-colors">
@@ -247,7 +256,7 @@ export default function Dashboard({ initialSites }: Props) {
       {/* ── DESKTOP LAYOUT (hidden on mobile) ── */}
       <div className="hidden md:flex flex-1 overflow-hidden">
         {/* Left panel: filters + site list */}
-        <div className="flex flex-col w-[320px] shrink-0 border-r border-[#1e1e2e] overflow-hidden">
+        <div className={`flex flex-col shrink-0 border-r border-[#1e1e2e] overflow-hidden transition-all duration-200 ${showSidebar ? 'w-[320px]' : 'w-0 border-r-0'}`}>
           <FilterPanel filters={filters} onChange={handleFilterChange} />
           <div className="text-[10px] text-slate-600 px-3 py-1 border-b border-[#1a1a2a]">
             {filtered.length} site{filtered.length !== 1 ? 's' : ''}
