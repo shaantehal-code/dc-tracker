@@ -10,6 +10,9 @@ import { runEia } from './eia';
 import { runFerc } from './ferc';
 import { runGdelt } from './gdelt';
 import { runIsoQueues } from './iso-queues';
+import { runPermitTracker } from './permit-tracker';
+import { runJobSignals } from './job-signals';
+import { runEarningsWatch } from './earnings-watch';
 
 export const SOURCES: Record<string, {
   label: string;
@@ -45,6 +48,21 @@ export const SOURCES: Record<string, {
     label: 'ISO Queue Monitor',
     desc: 'All 7 US ISO/RTOs + non-ISO utilities + Canada — large-load interconnection requests',
     run: runIsoQueues,
+  },
+  permit_tracker: {
+    label: 'Permit Tracker',
+    desc: 'County building permits, water permits & zoning changes across 13+ DC-heavy counties',
+    run: runPermitTracker,
+  },
+  job_signals: {
+    label: 'Job Signals',
+    desc: 'Indeed RSS + news — DC construction hiring as 6-12 month leading indicator',
+    run: runJobSignals,
+  },
+  earnings_watch: {
+    label: 'Earnings Watch',
+    desc: 'Hyperscaler & DC REIT earnings calls / investor days — capacity announcements',
+    run: runEarningsWatch,
   },
 };
 
@@ -163,6 +181,24 @@ export async function runSource(db: DatabaseSync, sourceKey: string): Promise<In
   };
 }
 
+// Decay opportunity scores for sites with no recent high-confidence signals.
+// Runs once per full cycle — score drifts toward 30 (floor) if inactive 30+ days.
+function decayOpportunityScores(db: DatabaseSync): void {
+  try {
+    db.prepare(`
+      UPDATE sites
+      SET opportunity_score = MAX(30, opportunity_score - 1)
+      WHERE opportunity_score > 30
+        AND id NOT IN (
+          SELECT DISTINCT site_id FROM signals
+          WHERE confidence = 'high'
+            AND auto_generated = 1
+            AND date >= date('now', '-30 days')
+        )
+    `).run();
+  } catch { /* non-fatal */ }
+}
+
 export async function runAllSources(db: DatabaseSync): Promise<IngestionResult[]> {
   const results: IngestionResult[] = [];
   for (const key of Object.keys(SOURCES)) {
@@ -179,5 +215,6 @@ export async function runAllSources(db: DatabaseSync): Promise<IngestionResult[]
       });
     }
   }
+  decayOpportunityScores(db);
   return results;
 }

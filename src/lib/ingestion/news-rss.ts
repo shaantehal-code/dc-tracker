@@ -31,6 +31,18 @@ const FEEDS = [
   { url: 'https://news.google.com/rss/search?q=%22AI+campus%22+OR+%22AI+data+center%22+%22gigawatt%22+OR+%22megawatt%22&hl=en-US&gl=US&ceid=US:en', label: 'GNews-AIcampus' },
   { url: 'https://news.google.com/rss/search?q=%22nuclear%22+%22data+center%22+%22power+purchase%22+OR+%22co-location%22&hl=en-US&gl=US&ceid=US:en', label: 'GNews-Nuclear' },
   { url: 'https://news.google.com/rss/search?q=%22data+center%22+%22land+acquisition%22+OR+%22acres%22+megawatt+investment&hl=en-US&gl=US&ceid=US:en', label: 'GNews-Land' },
+  // Real estate / market intelligence
+  { url: 'https://www.cbre.com/insights/rss',                              label: 'CBRE' },
+  { url: 'https://www.jll.com/en/newsroom/rss',                            label: 'JLL' },
+  { url: 'https://www.datacenterrealestate.com/feed/',                     label: 'DCRE' },
+  // Additional trade publications
+  { url: 'https://www.nextplatform.com/feed/',                             label: 'NextPlatform' },
+  { url: 'https://blocksandfiles.com/feed/',                               label: 'BlocksFiles' },
+  { url: 'https://www.techmonitor.ai/feed',                                label: 'TechMonitor' },
+  // Earnings/investment news
+  { url: 'https://seekingalpha.com/tag/data-center.xml',                   label: 'SA-DC' },
+  // Patent filings (data center infrastructure)
+  { url: 'https://news.google.com/rss/search?q=%22data+center%22+patent+filing+cooling+OR+power+OR+modular+2025&hl=en-US&gl=US&ceid=US:en', label: 'Patents' },
 ];
 
 // Keywords that boost a news article's relevance to DC acquisition intelligence

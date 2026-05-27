@@ -83,9 +83,17 @@ export default function SiteList({ sites, selectedId, onSelect, onToggleWatchlis
             </span>
             <span>{site.landAcres.toLocaleString()} ac</span>
             <span className="text-slate-600">{site.type.replace(/_/g,' ')}</span>
-            {(site.signals?.length ?? 0) > 0 && (
-              <span className="text-blue-500">{site.signals!.length} signal{site.signals!.length !== 1 ? 's' : ''}</span>
-            )}
+            {(site.signals?.length ?? 0) > 0 && (() => {
+              const latest = site.signals!.reduce((a, b) => a.date > b.date ? a : b);
+              const days = Math.floor((Date.now() - new Date(latest.date).getTime()) / 86400000);
+              const freshCls = days <= 3 ? 'text-green-400' : days <= 14 ? 'text-blue-400' : days <= 30 ? 'text-yellow-500' : 'text-blue-500';
+              return (
+                <span className={freshCls}>
+                  {site.signals!.length} signal{site.signals!.length !== 1 ? 's' : ''}
+                  {days <= 14 && <span className="ml-1 font-semibold">·new</span>}
+                </span>
+              );
+            })()}
           </div>
           {site.owner && (
             <div className="mt-1 text-[10px] text-slate-600 truncate" title={site.owner}>
