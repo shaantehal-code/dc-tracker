@@ -26,6 +26,20 @@ const REGION_QUERIES: Array<{ location: string; query: string; mustContain: stri
   { location: 'NorthCarolina', query: '"Research Triangle" OR "RTP" "data center" power Duke Energy',    mustContain: ['rtp','research triangle','carolina','duke energy'],siteHints: ['rtp-nc'] },
   { location: 'NewJersey',     query: '"New Jersey" OR Secaucus OR Parsippany "data center" power',      mustContain: ['jersey','secaucus','parsippany'],                siteHints: ['secaucus-nj'] },
   { location: 'Florida',       query: 'Miami OR Florida "data center" power megawatt FPL',               mustContain: ['miami','florida','fpl'],                         siteHints: ['miami-fl'] },
+  // Additional US states
+  { location: 'Illinois',      query: 'Illinois OR Chicago OR Aurora "data center" power megawatt ComEd', mustContain: ['illinois','chicago','aurora','comed'],          siteHints: ['aurora-il','dekalb-il'] },
+  { location: 'Colorado',      query: 'Colorado OR Denver "data center" power megawatt Xcel Energy',      mustContain: ['colorado','denver','aurora'],                   siteHints: ['denver-co','edgecore-aurora'] },
+  { location: 'Minnesota',     query: 'Minnesota OR Minneapolis "data center" power megawatt Xcel',       mustContain: ['minnesota','minneapolis','eagan','xcel'],        siteHints: ['eagan-mn'] },
+  { location: 'Oklahoma',      query: 'Oklahoma OR Tulsa "data center" power megawatt OG&E PSO',          mustContain: ['oklahoma','tulsa','pryor'],                      siteHints: ['google-mayes-ok','oklahoma-city-ok'] },
+  { location: 'Alabama',       query: 'Alabama OR Huntsville "data center" power megawatt TVA',           mustContain: ['alabama','huntsville'],                         siteHints: ['huntsville-al'] },
+  { location: 'Indiana',       query: 'Indiana OR Indianapolis "data center" power megawatt Duke',        mustContain: ['indiana','indianapolis'],                       siteHints: ['indianapolis-in'] },
+  { location: 'Missouri',      query: 'Missouri OR "Kansas City" OR "St. Louis" "data center" power',     mustContain: ['missouri','kansas city','st. louis','stlouis'],  siteHints: ['kansas-city-mo','stlouis-mo'] },
+  { location: 'Wisconsin',     query: 'Wisconsin OR Racine OR Milwaukee "data center" power megawatt',    mustContain: ['wisconsin','racine','milwaukee'],                siteHints: ['microsoft-racine'] },
+  { location: 'WestVirginia',  query: '"West Virginia" OR Moorefield "data center" power megawatt',       mustContain: ['west virginia','moorefield'],                   siteHints: ['monarch-wv'] },
+  { location: 'Louisiana',     query: 'Louisiana OR "Richland Parish" "data center" power megawatt',      mustContain: ['louisiana','richland'],                         siteHints: ['meta-louisiana'] },
+  { location: 'NewYork',       query: '"New York" OR Plattsburgh "data center" power NYPA hydro',         mustContain: ['plattsburgh','new york','nypa'],                 siteHints: ['plattsburgh-ny'] },
+  { location: 'Idaho',         query: 'Idaho OR Boise "data center" power megawatt Idaho Power',          mustContain: ['idaho','boise'],                                siteHints: ['boise-id'] },
+  { location: 'Massachusetts', query: 'Massachusetts OR "Brayton Point" OR Boston "data center" power',   mustContain: ['massachusetts','brayton','boston'],              siteHints: ['brayton-point-ma'] },
 ];
 
 const HIGH_VALUE_TERMS = ['megawatt','gigawatt','mw','gw','ppa','interconnection','transmission','campus','utility','offtake','reactor','smr','nuclear','power','substation'];

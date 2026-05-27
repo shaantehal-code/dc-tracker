@@ -58,6 +58,16 @@ const CITY_QUERIES: Array<{ query: string; mustContain: string[]; siteHints: str
   { query: 'Santiago OR Chile "data center" megawatt campus hyperscale',                   mustContain: ['santiago','chile'],           siteHints: ['santiago-chile'] },
   { query: 'Querétaro OR Mexico "data center" megawatt campus',                            mustContain: ['queretaro','mexico'],         siteHints: ['queretaro-mx'] },
   { query: 'Bogotá OR Colombia "data center" megawatt campus hyperscale',                  mustContain: ['bogota','colombia'],          siteHints: ['bogota-co'] },
+  // Canada
+  { query: 'Montreal OR "Vaudreuil" OR Quebec "data center" megawatt hyperscale campus',  mustContain: ['montreal','quebec','vaudreuil'],siteHints: ['montreal-qc'] },
+  { query: 'Toronto OR Markham OR Ontario "data center" megawatt hyperscale campus',      mustContain: ['toronto','markham','ontario'],  siteHints: ['toronto-on'] },
+  { query: 'Vancouver OR Surrey OR "British Columbia" "data center" megawatt hyperscale', mustContain: ['vancouver','surrey','columbia'], siteHints: ['vancouver-bc'] },
+  // Northern/Eastern Europe (uncovered markets)
+  { query: 'Reykjavik OR Iceland "data center" megawatt geothermal campus hyperscale',    mustContain: ['reykjavik','iceland'],          siteHints: ['reykjavik-is'] },
+  { query: 'Helsinki OR Kouvola OR Finland "data center" megawatt campus hyperscale',     mustContain: ['helsinki','kouvola','finland'],  siteHints: ['kouvola-fi'] },
+  { query: 'Eskilstuna OR Mälardalen OR "Vasteras" Sweden "data center" megawatt campus', mustContain: ['eskilstuna','vasteras','sweden'], siteHints: ['eskilstuna-se'] },
+  { query: 'Sines OR Lisbon OR Portugal "data center" megawatt subsea campus',            mustContain: ['sines','lisbon','portugal'],    siteHints: ['sines-pt'] },
+  { query: 'Bucharest OR Romania "data center" megawatt campus hyperscale',               mustContain: ['bucharest','romania'],          siteHints: ['bucharest-ro'] },
 ];
 
 const HIGH_VALUE_TERMS = ['megawatt','gigawatt','mw','gw','hyperscale','campus','construction','groundbreaking','billion','announced','expansion','investment'];

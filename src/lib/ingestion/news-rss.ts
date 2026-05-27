@@ -28,6 +28,9 @@ const FEEDS = [
   { url: 'https://news.google.com/rss/search?q=data+center+permit+zoning+county&hl=en-US&gl=US&ceid=US:en', label: 'GNews-Permits' },
   { url: 'https://news.google.com/rss/search?q=data+center+lease+signed+colocation+announced&hl=en-US&gl=US&ceid=US:en', label: 'GNews-Leases' },
   { url: 'https://news.google.com/rss/search?q=hyperscale+"breaks+ground"+campus+megawatt&hl=en-US&gl=US&ceid=US:en', label: 'GNews-Build' },
+  { url: 'https://news.google.com/rss/search?q=%22AI+campus%22+OR+%22AI+data+center%22+%22gigawatt%22+OR+%22megawatt%22&hl=en-US&gl=US&ceid=US:en', label: 'GNews-AIcampus' },
+  { url: 'https://news.google.com/rss/search?q=%22nuclear%22+%22data+center%22+%22power+purchase%22+OR+%22co-location%22&hl=en-US&gl=US&ceid=US:en', label: 'GNews-Nuclear' },
+  { url: 'https://news.google.com/rss/search?q=%22data+center%22+%22land+acquisition%22+OR+%22acres%22+megawatt+investment&hl=en-US&gl=US&ceid=US:en', label: 'GNews-Land' },
 ];
 
 // Keywords that boost a news article's relevance to DC acquisition intelligence
