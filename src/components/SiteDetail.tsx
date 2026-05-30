@@ -1,8 +1,9 @@
 'use client';
 
 import { Site } from '@/types';
-import { X, Star, ExternalLink, Zap, Layers, Droplets, Wifi, DollarSign } from 'lucide-react';
-import { useState } from 'react';
+import { X, Star, ExternalLink } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { computeFeasibility } from '@/lib/feasibility';
 
 interface Props {
   site: Site;
@@ -27,15 +28,22 @@ const SIG_ICON: Record<string,string> = {
   land_sale: '🏞', satellite_change: '🛰', power_plant_retirement: '🔌', partner_announcement: '🤝',
 };
 
+const IMPACT_COLOR = { positive: 'text-green-400', neutral: 'text-slate-400', negative: 'text-red-400' };
+const IMPACT_ICON  = { positive: '✓', neutral: '·', negative: '✗' };
+
 export default function SiteDetail({ site, onClose, onToggleWatchlist, onSaveNotes }: Props) {
   const [notes, setNotes] = useState(site.userNotes || '');
   const [saved, setSaved] = useState(false);
+
+  const feasibility = useMemo(() => computeFeasibility(site, site.signals ?? []), [site]);
 
   function handleSave() {
     onSaveNotes(site.id, notes);
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
   }
+
+  const feasColor = feasibility.score >= 70 ? '#22c55e' : feasibility.score >= 45 ? '#f59e0b' : '#ef4444';
 
   return (
     <div className="flex flex-col h-full bg-[#0d0d14]">
@@ -84,6 +92,29 @@ export default function SiteDetail({ site, onClose, onToggleWatchlist, onSaveNot
           {site.askingPriceMUSD && <Row label="Asking Price" value={`$${site.askingPriceMUSD}M USD`} />}
           <Row label="Region" value={site.region} />
           <Row label="Coordinates" value={`${site.lat.toFixed(4)}, ${site.lng.toFixed(4)}`} />
+        </div>
+
+        {/* ── Interconnection Feasibility ── */}
+        <div className="mt-4 bg-[#111118] border border-[#1e1e2e] rounded-lg p-3">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[11px] text-slate-400 uppercase tracking-wider font-semibold">Grid Feasibility</span>
+            <span className="text-sm font-bold" style={{ color: feasColor }}>{feasibility.score}/100</span>
+          </div>
+          <div className="h-1.5 bg-[#1a1a2e] rounded-full overflow-hidden mb-2">
+            <div className="h-full rounded-full transition-all" style={{ width: `${feasibility.score}%`, background: feasColor }} />
+          </div>
+          <div className="text-[11px] text-slate-400 mb-2">
+            Est. interconnection timeline: <span className="text-white font-medium">{feasibility.monthsLow}–{feasibility.monthsHigh} months</span>
+            <span className="text-slate-600"> · {feasibility.isoLabel}</span>
+          </div>
+          <div className="flex flex-col gap-1">
+            {feasibility.factors.map((f, i) => (
+              <div key={i} className={`text-[10px] flex gap-1.5 ${IMPACT_COLOR[f.impact]}`}>
+                <span className="shrink-0">{IMPACT_ICON[f.impact]}</span>
+                <span>{f.label}</span>
+              </div>
+            ))}
+          </div>
         </div>
 
         {site.tags.length > 0 && (
@@ -152,3 +183,4 @@ export default function SiteDetail({ site, onClose, onToggleWatchlist, onSaveNot
     </div>
   );
 }
+

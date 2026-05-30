@@ -10,7 +10,9 @@ import SiteDetail from './SiteDetail';
 import SignalFeed from './SignalFeed';
 import IngestPanel from './IngestPanel';
 import RemoteControlPanel from './RemoteControlPanel';
-import { List, Map as MapIcon, Zap, Upload, Radio, SlidersHorizontal, X, Database, FileDown, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+import InsightsPanel from './InsightsPanel';
+import AIChatPanel from './AIChatPanel';
+import { List, Map as MapIcon, Zap, Upload, Radio, SlidersHorizontal, X, Database, FileDown, PanelLeftClose, PanelLeftOpen, BarChart2, MessageSquare } from 'lucide-react';
 
 const MapView = dynamic(() => import('./MapView'), { ssr: false });
 
@@ -32,16 +34,18 @@ const DEFAULT_FILTERS: FilterState = {
   sort: 'score',
 };
 
-const DESKTOP_TABS = ['Map', 'Signals', 'Ingest', 'Remote'] as const;
+const DESKTOP_TABS = ['Map', 'Signals', 'Insights', 'Chat', 'Ingest', 'Remote'] as const;
 type DesktopTab = typeof DESKTOP_TABS[number];
 
-type MobileTab = 'sites' | 'map' | 'signals' | 'ingest' | 'remote';
+type MobileTab = 'sites' | 'map' | 'signals' | 'insights' | 'chat' | 'ingest' | 'remote';
 const MOBILE_TABS: { id: MobileTab; label: string; Icon: React.ElementType }[] = [
-  { id: 'sites', label: 'Sites', Icon: List },
-  { id: 'map', label: 'Map', Icon: MapIcon },
-  { id: 'signals', label: 'Signals', Icon: Zap },
-  { id: 'ingest', label: 'Ingest', Icon: Upload },
-  { id: 'remote', label: 'Remote', Icon: Radio },
+  { id: 'sites',    label: 'Sites',    Icon: List },
+  { id: 'map',      label: 'Map',      Icon: MapIcon },
+  { id: 'signals',  label: 'Signals',  Icon: Zap },
+  { id: 'insights', label: 'Insights', Icon: BarChart2 },
+  { id: 'chat',     label: 'Chat',     Icon: MessageSquare },
+  { id: 'ingest',   label: 'Ingest',   Icon: Upload },
+  { id: 'remote',   label: 'Remote',   Icon: Radio },
 ];
 
 export default function Dashboard({ initialSites }: Props) {
@@ -237,20 +241,22 @@ export default function Dashboard({ initialSites }: Props) {
             <MapView sites={filtered} selectedId={selectedId} onSelect={id => { setSelectedId(id); setMobileTab('sites'); }} />
           )}
           {mobileTab === 'signals' && <SignalFeed />}
+          {mobileTab === 'insights' && <InsightsPanel />}
+          {mobileTab === 'chat' && <AIChatPanel />}
           {mobileTab === 'ingest' && <IngestPanel />}
           {mobileTab === 'remote' && <RemoteControlPanel />}
         </div>
 
-        {/* Bottom nav */}
-        <nav className="flex items-center justify-around border-t border-[#1e1e2e] bg-[#0d0d14] shrink-0 py-1">
+        {/* Bottom nav — scrollable to fit 7 tabs */}
+        <nav className="flex items-center gap-0.5 overflow-x-auto scrollbar-none border-t border-[#1e1e2e] bg-[#0d0d14] shrink-0 py-1 px-1">
           {MOBILE_TABS.map(({ id, label, Icon }) => (
             <button
               key={id}
               onClick={() => setMobileTab(id)}
-              className={`flex flex-col items-center gap-0.5 py-1.5 px-3 rounded transition-colors ${mobileTab === id ? 'text-blue-400' : 'text-slate-600 hover:text-slate-300'}`}
+              className={`flex flex-col items-center gap-0.5 py-1.5 px-2.5 rounded shrink-0 transition-colors ${mobileTab === id ? 'text-blue-400' : 'text-slate-600 hover:text-slate-300'}`}
             >
-              <Icon size={18} />
-              <span className="text-[10px]">{label}</span>
+              <Icon size={17} />
+              <span className="text-[9px]">{label}</span>
             </button>
           ))}
         </nav>
@@ -284,12 +290,14 @@ export default function Dashboard({ initialSites }: Props) {
           />
         </div>
 
-        {/* Center: map / signals / ingest / remote */}
-        <div className="flex-1 overflow-hidden relative">
+        {/* Center: map / signals / insights / chat / ingest / remote */}
+        <div className="flex-1 overflow-hidden relative flex flex-col">
           {rightTab === 'Map' && (
             <MapView sites={filtered} selectedId={selectedId} onSelect={setSelectedId} />
           )}
           {rightTab === 'Signals' && <SignalFeed />}
+          {rightTab === 'Insights' && <InsightsPanel />}
+          {rightTab === 'Chat' && <AIChatPanel />}
           {rightTab === 'Ingest' && <IngestPanel />}
           {rightTab === 'Remote' && <RemoteControlPanel />}
         </div>

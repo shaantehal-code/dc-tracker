@@ -9,6 +9,7 @@
     "seed": "node --experimental-vm-modules src/lib/seed.mjs"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.100.1",
     "clsx": "^2.1.1",
     "leaflet": "^1.9.4",
     "lucide-react": "^0.400.0",
