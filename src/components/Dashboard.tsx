@@ -12,7 +12,8 @@ import IngestPanel from './IngestPanel';
 import RemoteControlPanel from './RemoteControlPanel';
 import InsightsPanel from './InsightsPanel';
 import AIChatPanel from './AIChatPanel';
-import { List, Map as MapIcon, Zap, Upload, Radio, SlidersHorizontal, X, Database, FileDown, PanelLeftClose, PanelLeftOpen, BarChart2, MessageSquare } from 'lucide-react';
+import CompaniesPanel from './CompaniesPanel';
+import { List, Map as MapIcon, Zap, Upload, Radio, SlidersHorizontal, X, Database, FileDown, PanelLeftClose, PanelLeftOpen, BarChart2, MessageSquare, Building2 } from 'lucide-react';
 
 const MapView = dynamic(() => import('./MapView'), { ssr: false });
 
@@ -34,18 +35,19 @@ const DEFAULT_FILTERS: FilterState = {
   sort: 'score',
 };
 
-const DESKTOP_TABS = ['Map', 'Signals', 'Insights', 'Chat', 'Ingest', 'Remote'] as const;
+const DESKTOP_TABS = ['Map', 'Signals', 'Insights', 'Chat', 'Companies', 'Ingest', 'Remote'] as const;
 type DesktopTab = typeof DESKTOP_TABS[number];
 
-type MobileTab = 'sites' | 'map' | 'signals' | 'insights' | 'chat' | 'ingest' | 'remote';
+type MobileTab = 'sites' | 'map' | 'signals' | 'insights' | 'chat' | 'companies' | 'ingest' | 'remote';
 const MOBILE_TABS: { id: MobileTab; label: string; Icon: React.ElementType }[] = [
-  { id: 'sites',    label: 'Sites',    Icon: List },
-  { id: 'map',      label: 'Map',      Icon: MapIcon },
-  { id: 'signals',  label: 'Signals',  Icon: Zap },
-  { id: 'insights', label: 'Insights', Icon: BarChart2 },
-  { id: 'chat',     label: 'Chat',     Icon: MessageSquare },
-  { id: 'ingest',   label: 'Ingest',   Icon: Upload },
-  { id: 'remote',   label: 'Remote',   Icon: Radio },
+  { id: 'sites',     label: 'Sites',     Icon: List },
+  { id: 'map',       label: 'Map',       Icon: MapIcon },
+  { id: 'signals',   label: 'Signals',   Icon: Zap },
+  { id: 'insights',  label: 'Insights',  Icon: BarChart2 },
+  { id: 'chat',      label: 'Chat',      Icon: MessageSquare },
+  { id: 'companies', label: 'Companies', Icon: Building2 },
+  { id: 'ingest',    label: 'Ingest',    Icon: Upload },
+  { id: 'remote',    label: 'Remote',    Icon: Radio },
 ];
 
 export default function Dashboard({ initialSites }: Props) {
@@ -145,6 +147,12 @@ export default function Dashboard({ initialSites }: Props) {
     setSelectedId(id);
   }, []);
 
+  const handleSelectCompany = useCallback((keyword: string) => {
+    handleFilterChange({ search: keyword });
+    setMobileTab('sites');
+    setRightTab('Map');
+  }, [handleFilterChange]);
+
   return (
     <div className="flex flex-col h-dvh bg-[#0a0a0f] text-slate-200 overflow-hidden">
 
@@ -243,6 +251,7 @@ export default function Dashboard({ initialSites }: Props) {
           {mobileTab === 'signals' && <SignalFeed />}
           {mobileTab === 'insights' && <InsightsPanel />}
           {mobileTab === 'chat' && <AIChatPanel />}
+          {mobileTab === 'companies' && <CompaniesPanel onSelectCompany={handleSelectCompany} />}
           {mobileTab === 'ingest' && <IngestPanel />}
           {mobileTab === 'remote' && <RemoteControlPanel />}
         </div>
@@ -298,6 +307,7 @@ export default function Dashboard({ initialSites }: Props) {
           {rightTab === 'Signals' && <SignalFeed />}
           {rightTab === 'Insights' && <InsightsPanel />}
           {rightTab === 'Chat' && <AIChatPanel />}
+          {rightTab === 'Companies' && <CompaniesPanel onSelectCompany={handleSelectCompany} />}
           {rightTab === 'Ingest' && <IngestPanel />}
           {rightTab === 'Remote' && <RemoteControlPanel />}
         </div>

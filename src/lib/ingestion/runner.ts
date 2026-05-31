@@ -13,6 +13,8 @@ import { runIsoQueues } from './iso-queues';
 import { runPermitTracker } from './permit-tracker';
 import { runJobSignals } from './job-signals';
 import { runEarningsWatch } from './earnings-watch';
+import { runIsoQueueStructured } from './iso-queue-structured';
+import { runFercDockets } from './ferc-dockets';
 
 export const SOURCES: Record<string, {
   label: string;
@@ -63,6 +65,16 @@ export const SOURCES: Record<string, {
     label: 'Earnings Watch',
     desc: 'Hyperscaler & DC REIT earnings calls / investor days — capacity announcements',
     run: runEarningsWatch,
+  },
+  iso_queue_structured: {
+    label: 'ISO Queue (Structured)',
+    desc: 'EIA-860M planned generators ≥200 MW by county/tech/authority + FERC docket news',
+    run: runIsoQueueStructured,
+  },
+  ferc_dockets: {
+    label: 'FERC Dockets',
+    desc: 'FERC official RSS + targeted policy queries — Order 2023, ER dockets, large-load',
+    run: runFercDockets,
   },
 };
 
