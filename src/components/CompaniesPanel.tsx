@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { RefreshCw, ChevronRight, Zap, Building2 } from 'lucide-react';
+import { RefreshCw, ChevronRight, Zap, Building2, ExternalLink } from 'lucide-react';
 
 interface CompanyRow {
   name: string;
@@ -14,6 +14,7 @@ interface CompanyRow {
   latestSignal: { date: string; type: string; description: string; site: string } | null;
   topSites: { id: string; name: string; region: string; opportunity_score: number; power_capacity_mw: number }[];
   searchKeyword: string;
+  secCik: string | null;
 }
 
 interface Props {
@@ -164,6 +165,19 @@ export default function CompaniesPanel({ onSelectCompany }: Props) {
               >
                 View all {c.siteCount} site{c.siteCount !== 1 ? 's' : ''} on map →
               </button>
+
+              {/* SEC filings link */}
+              {c.secCik && (
+                <a
+                  href={`https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=${c.secCik}&type=8-K&dateb=&owner=include&count=10`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-2 w-full flex items-center justify-center gap-1.5 text-xs py-1.5 px-3 bg-[#0d0d14] hover:bg-[#111118] border border-[#1e1e2e] rounded text-slate-500 hover:text-slate-300 transition-colors"
+                >
+                  <ExternalLink size={10} />
+                  SEC EDGAR Filings
+                </a>
+              )}
             </div>
           )}
         </div>

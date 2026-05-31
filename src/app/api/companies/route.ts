@@ -5,15 +5,15 @@ export const dynamic = 'force-dynamic';
 
 // Known operators — keywords match against owner, tags (JSON), and name fields
 const COMPANIES = [
-  { name: 'Microsoft',        color: '#00a4ef', keywords: ['microsoft', 'msft', 'azure'] },
-  { name: 'Amazon / AWS',     color: '#ff9900', keywords: ['amazon', 'aws', 'amzn'] },
-  { name: 'Google / Alphabet',color: '#4285f4', keywords: ['google', 'alphabet', 'googl'] },
-  { name: 'Meta',             color: '#0866ff', keywords: ['meta', 'facebook'] },
-  { name: 'Apple',            color: '#888888', keywords: ['apple', 'aapl'] },
-  { name: 'Nvidia',           color: '#76b900', keywords: ['nvidia', 'nvda'] },
-  { name: 'Equinix',          color: '#e11d48', keywords: ['equinix', 'eqix'] },
-  { name: 'Digital Realty',   color: '#3b82f6', keywords: ['digital realty', 'dlr', 'digitalrealty'] },
-  { name: 'Iron Mountain',    color: '#f97316', keywords: ['iron mountain', 'ironmountain', 'irm'] },
+  { name: 'Microsoft',        color: '#00a4ef', keywords: ['microsoft', 'msft', 'azure'],                              secCik: '789019' },
+  { name: 'Amazon / AWS',     color: '#ff9900', keywords: ['amazon', 'aws', 'amzn'],                                   secCik: '1018724' },
+  { name: 'Google / Alphabet',color: '#4285f4', keywords: ['google', 'alphabet', 'googl'],                             secCik: '1652044' },
+  { name: 'Meta',             color: '#0866ff', keywords: ['meta', 'facebook'],                                        secCik: '1326801' },
+  { name: 'Apple',            color: '#888888', keywords: ['apple', 'aapl'],                                           secCik: '320193' },
+  { name: 'Nvidia',           color: '#76b900', keywords: ['nvidia', 'nvda'],                                          secCik: '1045810' },
+  { name: 'Equinix',          color: '#e11d48', keywords: ['equinix', 'eqix'],                                         secCik: '1101239' },
+  { name: 'Digital Realty',   color: '#3b82f6', keywords: ['digital realty', 'dlr', 'digitalrealty'],                 secCik: '1297996' },
+  { name: 'Iron Mountain',    color: '#f97316', keywords: ['iron mountain', 'ironmountain', 'irm'],                    secCik: '1020569' },
   { name: 'CoreWeave',        color: '#8b5cf6', keywords: ['coreweave'] },
   { name: 'xAI',              color: '#f1f5f9', keywords: ['xai', 'x.ai', 'grok'] },
   { name: 'CyrusOne',         color: '#06b6d4', keywords: ['cyrusone'] },
@@ -24,7 +24,7 @@ const COMPANIES = [
   { name: 'Applied Digital',  color: '#0ea5e9', keywords: ['applied digital', 'apld'] },
   { name: 'Aligned DC',       color: '#84cc16', keywords: ['aligned'] },
   { name: 'Stack Infrastructure', color: '#64748b', keywords: ['stack infrastructure', 'stack infra'] },
-  { name: 'Talen Energy',     color: '#7c3aed', keywords: ['talen'] },
+  { name: 'Talen Energy',     color: '#7c3aed', keywords: ['talen'],                                                   secCik: '1649150' },
 ];
 
 function buildLikeClause(keyword: string): string {
@@ -89,6 +89,7 @@ export function GET() {
         latestSignal:  sigs ? { date: sigs.date, type: sigs.type, description: sigs.description?.slice(0, 100), site: sigs.site_name } : null,
         topSites:      sites,
         searchKeyword: company.keywords[0],
+        secCik:        company.secCik ?? null,
       });
     }
 

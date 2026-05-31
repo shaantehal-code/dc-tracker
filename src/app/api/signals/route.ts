@@ -17,6 +17,18 @@ export function GET(req: NextRequest) {
       const d = new Date(); d.setDate(d.getDate() - days);
       return d.toISOString().slice(0, 10);
     })() : null;
+    const countOnly = searchParams.get('count_only') === '1';
+    const sinceTs = searchParams.get('since_ts'); // ISO datetime string, filters by created_at
+
+    if (countOnly) {
+      let n: { n: number };
+      if (sinceTs) {
+        n = db.prepare(`SELECT COUNT(*) as n FROM signals WHERE created_at >= ?`).get(sinceTs) as { n: number };
+      } else {
+        n = db.prepare(`SELECT COUNT(*) as n FROM signals`).get() as { n: number };
+      }
+      return NextResponse.json({ count: n.n });
+    }
 
     let signals: unknown[];
     if (siteId && sinceDate) {

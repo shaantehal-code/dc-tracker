@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { Site, FilterState } from '@/types';
 import KPIBar from './KPIBar';
@@ -58,6 +58,7 @@ export default function Dashboard({ initialSites }: Props) {
   const [mobileTab, setMobileTab] = useState<MobileTab>('sites');
   const [showMobileFilters, setShowMobileFilters] = useState(false);
   const [showPanel, setShowPanel] = useState(true);
+  const [newSignalCount, setNewSignalCount] = useState(0);
 
   const filtered = useMemo(() => {
     let result = sites.filter(s => {
@@ -118,6 +119,22 @@ export default function Dashboard({ initialSites }: Props) {
       setSites(prev => prev.map(s => s.id === id ? { ...s, userNotes } : s));
     }
   }, []);
+
+  useEffect(() => {
+    const lastViewed = localStorage.getItem('dc_last_signal_view');
+    const url = lastViewed
+      ? `/api/signals?count_only=1&since_ts=${encodeURIComponent(lastViewed)}`
+      : `/api/signals?count_only=1`;
+    fetch(url)
+      .then(r => r.json())
+      .then(d => { if (typeof d.count === 'number') setNewSignalCount(d.count); })
+      .catch(() => {});
+  }, []);
+
+  function markSignalsViewed() {
+    localStorage.setItem('dc_last_signal_view', new Date().toISOString());
+    setNewSignalCount(0);
+  }
 
   async function seedDb() {
     const res = await fetch('/api/seed');
@@ -188,9 +205,14 @@ export default function Dashboard({ initialSites }: Props) {
           <div className="hidden md:flex items-center gap-1 ml-1">
             {DESKTOP_TABS.map(t => (
               <button key={t}
-                className={`text-xs px-3 py-1 rounded transition-colors ${rightTab === t ? 'bg-blue-700 text-white' : 'text-slate-500 hover:text-white'}`}
-                onClick={() => setRightTab(t)}>
+                className={`relative text-xs px-3 py-1 rounded transition-colors ${rightTab === t ? 'bg-blue-700 text-white' : 'text-slate-500 hover:text-white'}`}
+                onClick={() => { setRightTab(t); if (t === 'Signals') markSignalsViewed(); }}>
                 {t}
+                {t === 'Signals' && newSignalCount > 0 && (
+                  <span className="absolute -top-1 -right-1 min-w-[16px] h-4 bg-red-500 rounded-full text-[9px] font-bold text-white flex items-center justify-center px-0.5">
+                    {newSignalCount > 99 ? '99+' : newSignalCount}
+                  </span>
+                )}
               </button>
             ))}
           </div>
@@ -261,11 +283,16 @@ export default function Dashboard({ initialSites }: Props) {
           {MOBILE_TABS.map(({ id, label, Icon }) => (
             <button
               key={id}
-              onClick={() => setMobileTab(id)}
-              className={`flex flex-col items-center gap-0.5 py-1.5 px-2.5 rounded shrink-0 transition-colors ${mobileTab === id ? 'text-blue-400' : 'text-slate-600 hover:text-slate-300'}`}
+              onClick={() => { setMobileTab(id); if (id === 'signals') markSignalsViewed(); }}
+              className={`relative flex flex-col items-center gap-0.5 py-1.5 px-2.5 rounded shrink-0 transition-colors ${mobileTab === id ? 'text-blue-400' : 'text-slate-600 hover:text-slate-300'}`}
             >
               <Icon size={17} />
               <span className="text-[9px]">{label}</span>
+              {id === 'signals' && newSignalCount > 0 && (
+                <span className="absolute top-0.5 right-0.5 min-w-[14px] h-3.5 bg-red-500 rounded-full text-[8px] font-bold text-white flex items-center justify-center px-0.5">
+                  {newSignalCount > 99 ? '99+' : newSignalCount}
+                </span>
+              )}
             </button>
           ))}
         </nav>

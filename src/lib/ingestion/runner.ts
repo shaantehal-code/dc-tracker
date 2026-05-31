@@ -15,6 +15,7 @@ import { runJobSignals } from './job-signals';
 import { runEarningsWatch } from './earnings-watch';
 import { runIsoQueueStructured } from './iso-queue-structured';
 import { runFercDockets } from './ferc-dockets';
+import { runIsoQueueCsv } from './iso-queue-csv';
 
 export const SOURCES: Record<string, {
   label: string;
@@ -75,6 +76,11 @@ export const SOURCES: Record<string, {
     label: 'FERC Dockets',
     desc: 'FERC official RSS + targeted policy queries — Order 2023, ER dockets, large-load',
     run: runFercDockets,
+  },
+  iso_queue_csv: {
+    label: 'ISO Queue (CSV/API)',
+    desc: 'Direct PJM, MISO, SPP queue CSVs + ERCOT JSON API — queue position, MW, county, fuel',
+    run: runIsoQueueCsv,
   },
 };
 

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { TrendingUp, Activity, Zap, Building2, RefreshCw } from 'lucide-react';
+import { TrendingUp, Activity, Zap, Building2, RefreshCw, FileDown } from 'lucide-react';
 
 interface InsightsData {
   stats: { totalSites: number; totalSignals: number; signals7d: number; totalGW: string };
@@ -71,6 +71,36 @@ export default function InsightsPanel() {
     );
   }
 
+  function exportCSV() {
+    if (!data) return;
+    const rows: string[] = ['DC Tracker Insights Export', `Generated: ${new Date().toISOString()}`, ''];
+
+    rows.push('=== Signals by Type (90d) ===', 'Type,Count');
+    data.byType.forEach(b => rows.push(`"${b.type.replace(/_/g,' ')}",${b.count}`));
+    rows.push('');
+
+    rows.push('=== Most Active Sites (30d) ===', 'Name,Region,Score,Signals');
+    data.topSites.forEach(s => rows.push(`"${s.name}","${s.region}",${s.opportunity_score},${s.signal_count}`));
+    rows.push('');
+
+    rows.push('=== High-Confidence Velocity Leaders (30d) ===', 'Name,Score,HighConfSignals');
+    data.velocityLeaders.forEach(s => rows.push(`"${s.name}",${s.opportunity_score},${s.hc_signals}`));
+    rows.push('');
+
+    rows.push('=== Signals by Region ===', 'Region,Count');
+    data.byRegion.forEach(r => rows.push(`"${r.region || 'unknown'}",${r.count}`));
+    rows.push('');
+
+    rows.push('=== Score Distribution ===', 'Bucket,Count');
+    data.scoreDistribution.forEach(b => rows.push(`"${b.bucket}",${b.count}`));
+
+    const blob = new Blob([rows.join('\n')], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `dc-insights-${new Date().toISOString().slice(0,10)}.csv`; a.click();
+    URL.revokeObjectURL(url);
+  }
+
   const maxByType   = Math.max(...data.byType.map(b => b.count), 1);
   const maxByDay    = Math.max(...data.byDay.map(b => b.count), 1);
   const maxScore    = Math.max(...data.scoreDistribution.map(b => b.count), 1);
@@ -78,6 +108,18 @@ export default function InsightsPanel() {
 
   return (
     <div className="overflow-y-auto flex-1 p-4 flex flex-col gap-5">
+
+      {/* Header row with export */}
+      <div className="flex items-center justify-between">
+        <span className="text-[11px] text-slate-500 uppercase tracking-wider font-semibold">Dashboard</span>
+        <button
+          onClick={exportCSV}
+          className="flex items-center gap-1.5 text-xs px-2.5 py-1 bg-[#1a1a2e] hover:bg-[#252540] border border-[#2d2d4e] rounded text-slate-400 hover:text-white transition-colors"
+        >
+          <FileDown size={11} />
+          Export CSV
+        </button>
+      </div>
 
       {/* ── Top stats ── */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
