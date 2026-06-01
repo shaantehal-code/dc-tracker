@@ -40,6 +40,24 @@ export function GET() {
       ORDER BY MIN(opportunity_score) DESC
     `).all() as { bucket: string; count: number }[];
 
+    const allSitesForBuckets = db.prepare(`
+      SELECT id, name, region, opportunity_score FROM sites ORDER BY opportunity_score DESC
+    `).all() as { id: string; name: string; region: string; opportunity_score: number }[];
+
+    const bucketOf = (score: number): string => {
+      if (score >= 90) return '90–100';
+      if (score >= 80) return '80–89';
+      if (score >= 70) return '70–79';
+      if (score >= 60) return '60–69';
+      if (score >= 50) return '50–59';
+      return 'Below 50';
+    };
+
+    const scoreDistributionWithSites = scoreDistribution.map(b => ({
+      ...b,
+      sites: allSitesForBuckets.filter(s => bucketOf(s.opportunity_score) === b.bucket),
+    }));
+
     const topSites = db.prepare(`
       SELECT s.id, s.name, s.opportunity_score, s.region, COUNT(sig.id) as signal_count
       FROM sites s
@@ -74,7 +92,7 @@ export function GET() {
       stats: { totalSites, totalSignals, signals7d, totalGW: (totalMW / 1000).toFixed(1) },
       byType,
       byDay,
-      scoreDistribution,
+      scoreDistribution: scoreDistributionWithSites,
       topSites,
       velocityLeaders,
       byRegion,

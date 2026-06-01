@@ -13,7 +13,8 @@ import RemoteControlPanel from './RemoteControlPanel';
 import InsightsPanel from './InsightsPanel';
 import AIChatPanel from './AIChatPanel';
 import CompaniesPanel from './CompaniesPanel';
-import { List, Map as MapIcon, Zap, Upload, Radio, SlidersHorizontal, X, Database, FileDown, PanelLeftClose, PanelLeftOpen, BarChart2, MessageSquare, Building2 } from 'lucide-react';
+import PowerPanel from './PowerPanel';
+import { List, Map as MapIcon, Zap, Upload, Radio, SlidersHorizontal, X, Database, FileDown, PanelLeftClose, PanelLeftOpen, BarChart2, MessageSquare, Building2, Gauge } from 'lucide-react';
 
 const MapView = dynamic(() => import('./MapView'), { ssr: false });
 
@@ -35,15 +36,16 @@ const DEFAULT_FILTERS: FilterState = {
   sort: 'score',
 };
 
-const DESKTOP_TABS = ['Map', 'Signals', 'Insights', 'Chat', 'Companies', 'Ingest', 'Remote'] as const;
+const DESKTOP_TABS = ['Map', 'Signals', 'Insights', 'Power', 'Chat', 'Companies', 'Ingest', 'Remote'] as const;
 type DesktopTab = typeof DESKTOP_TABS[number];
 
-type MobileTab = 'sites' | 'map' | 'signals' | 'insights' | 'chat' | 'companies' | 'ingest' | 'remote';
+type MobileTab = 'sites' | 'map' | 'signals' | 'insights' | 'power' | 'chat' | 'companies' | 'ingest' | 'remote';
 const MOBILE_TABS: { id: MobileTab; label: string; Icon: React.ElementType }[] = [
   { id: 'sites',     label: 'Sites',     Icon: List },
   { id: 'map',       label: 'Map',       Icon: MapIcon },
   { id: 'signals',   label: 'Signals',   Icon: Zap },
   { id: 'insights',  label: 'Insights',  Icon: BarChart2 },
+  { id: 'power',     label: 'Power',     Icon: Gauge },
   { id: 'chat',      label: 'Chat',      Icon: MessageSquare },
   { id: 'companies', label: 'Companies', Icon: Building2 },
   { id: 'ingest',    label: 'Ingest',    Icon: Upload },
@@ -170,6 +172,12 @@ export default function Dashboard({ initialSites }: Props) {
     setRightTab('Map');
   }, [handleFilterChange]);
 
+  // Open a site's detail from any panel; on mobile, also land on the sites tab when the overlay closes
+  const handleSelectSite = useCallback((id: string) => {
+    setSelectedId(id);
+    setMobileTab('sites');
+  }, []);
+
   return (
     <div className="flex flex-col h-dvh bg-[#0a0a0f] text-slate-200 overflow-hidden">
 
@@ -271,9 +279,10 @@ export default function Dashboard({ initialSites }: Props) {
             <MapView sites={filtered} selectedId={selectedId} onSelect={id => { setSelectedId(id); setMobileTab('sites'); }} />
           )}
           {mobileTab === 'signals' && <SignalFeed />}
-          {mobileTab === 'insights' && <InsightsPanel />}
+          {mobileTab === 'insights' && <InsightsPanel onSelectSite={handleSelectSite} />}
+          {mobileTab === 'power' && <PowerPanel />}
           {mobileTab === 'chat' && <AIChatPanel />}
-          {mobileTab === 'companies' && <CompaniesPanel onSelectCompany={handleSelectCompany} />}
+          {mobileTab === 'companies' && <CompaniesPanel onSelectCompany={handleSelectCompany} onSelectSite={handleSelectSite} />}
           {mobileTab === 'ingest' && <IngestPanel />}
           {mobileTab === 'remote' && <RemoteControlPanel />}
         </div>
@@ -332,9 +341,10 @@ export default function Dashboard({ initialSites }: Props) {
             <MapView sites={filtered} selectedId={selectedId} onSelect={setSelectedId} />
           )}
           {rightTab === 'Signals' && <SignalFeed />}
-          {rightTab === 'Insights' && <InsightsPanel />}
+          {rightTab === 'Insights' && <InsightsPanel onSelectSite={setSelectedId} />}
+          {rightTab === 'Power' && <PowerPanel />}
           {rightTab === 'Chat' && <AIChatPanel />}
-          {rightTab === 'Companies' && <CompaniesPanel onSelectCompany={handleSelectCompany} />}
+          {rightTab === 'Companies' && <CompaniesPanel onSelectCompany={handleSelectCompany} onSelectSite={setSelectedId} />}
           {rightTab === 'Ingest' && <IngestPanel />}
           {rightTab === 'Remote' && <RemoteControlPanel />}
         </div>

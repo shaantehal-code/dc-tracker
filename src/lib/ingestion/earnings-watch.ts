@@ -25,6 +25,11 @@ const EARNINGS_QUERIES = [
   // AI infrastructure announcements
   { query: '"Project Stargate" OR "Stargate AI" "data center" megawatt OR gigawatt campus 2025', label: 'Stargate' },
   { query: '"AI campus" OR "AI factory" megawatt OR gigawatt construction investment 2025', label: 'AI-Campus' },
+  { query: 'Crusoe "data center" megawatt OR gigawatt Abilene OR campus AI capacity 2025', label: 'Crusoe' },
+  { query: 'Nebius "data center" megawatt OR gigawatt GPU capacity expansion 2025', label: 'Nebius' },
+  { query: 'Lambda Labs "data center" GPU megawatt OR gigawatt capacity cluster 2025', label: 'Lambda' },
+  { query: 'Nscale "data center" megawatt OR gigawatt GPU capacity Microsoft OR OpenAI 2025', label: 'Nscale' },
+  { query: '"neocloud" OR "GPU cloud" data center megawatt OR gigawatt capacity secured 2025', label: 'Neocloud' },
   // Earnings transcript aggregators
   { query: 'site:seekingalpha.com "data center" megawatt gigawatt earnings transcript 2025', label: 'SeekingAlpha' },
 ];

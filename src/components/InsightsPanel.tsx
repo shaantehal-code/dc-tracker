@@ -3,11 +3,13 @@
 import { useEffect, useState } from 'react';
 import { TrendingUp, Activity, Zap, Building2, RefreshCw, FileDown } from 'lucide-react';
 
+interface Props { onSelectSite: (id: string) => void; }
+
 interface InsightsData {
   stats: { totalSites: number; totalSignals: number; signals7d: number; totalGW: string };
   byType: { type: string; count: number }[];
   byDay: { date: string; count: number }[];
-  scoreDistribution: { bucket: string; count: number }[];
+  scoreDistribution: { bucket: string; count: number; sites: { id: string; name: string; region: string; opportunity_score: number }[] }[];
   topSites: { id: string; name: string; opportunity_score: number; region: string; signal_count: number }[];
   velocityLeaders: { id: string; name: string; opportunity_score: number; hc_signals: number }[];
   byRegion: { region: string; count: number }[];
@@ -39,10 +41,11 @@ function ScoreDot({ score }: { score: number }) {
   return <span className="inline-block w-2 h-2 rounded-full shrink-0" style={{ background: color }} />;
 }
 
-export default function InsightsPanel() {
+export default function InsightsPanel({ onSelectSite }: Props) {
   const [data, setData] = useState<InsightsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [openBucket, setOpenBucket] = useState<string | null>(null);
 
   function load() {
     setLoading(true);
@@ -182,10 +185,32 @@ export default function InsightsPanel() {
           <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-3">Opportunity Score Distribution</div>
           <div className="flex flex-col gap-2">
             {data.scoreDistribution.map(b => (
-              <div key={b.bucket} className="flex items-center gap-2">
-                <span className="text-[11px] text-slate-400 w-16 shrink-0">{b.bucket}</span>
-                <Bar value={b.count} max={maxScore} color={SCORE_COLORS[b.bucket] || '#6b7280'} />
-                <span className="text-[11px] text-slate-300 w-6 text-right shrink-0">{b.count}</span>
+              <div key={b.bucket}>
+                <button
+                  onClick={() => setOpenBucket(openBucket === b.bucket ? null : b.bucket)}
+                  disabled={b.count === 0}
+                  className="w-full flex items-center gap-2 py-0.5 rounded hover:bg-[#111118] disabled:cursor-default disabled:hover:bg-transparent transition-colors text-left"
+                >
+                  <span className="text-[11px] text-slate-400 w-16 shrink-0">{b.bucket}</span>
+                  <Bar value={b.count} max={maxScore} color={SCORE_COLORS[b.bucket] || '#6b7280'} />
+                  <span className="text-[11px] text-slate-300 w-6 text-right shrink-0">{b.count}</span>
+                </button>
+                {openBucket === b.bucket && b.sites.length > 0 && (
+                  <div className="ml-16 mt-1 mb-1 flex flex-col gap-0.5 border-l border-[#1e1e2e] pl-2">
+                    {b.sites.map(s => (
+                      <button
+                        key={s.id}
+                        onClick={() => onSelectSite(s.id)}
+                        className="flex items-center gap-2 text-[11px] py-0.5 px-1 rounded hover:bg-[#1a1a2e] text-left transition-colors group"
+                      >
+                        <ScoreDot score={s.opportunity_score} />
+                        <span className="text-slate-300 group-hover:text-white flex-1 truncate">{s.name}</span>
+                        <span className="text-slate-600 shrink-0">{s.region}</span>
+                        <span className="font-medium text-slate-400 w-6 text-right shrink-0">{s.opportunity_score}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -198,13 +223,13 @@ export default function InsightsPanel() {
             {data.topSites.length === 0 ? (
               <span className="text-[11px] text-slate-600">No signal activity in last 30 days.</span>
             ) : data.topSites.map((s, i) => (
-              <div key={s.id} className="flex items-center gap-2">
+              <button key={s.id} onClick={() => onSelectSite(s.id)} className="flex items-center gap-2 w-full text-left hover:bg-[#111118] rounded px-1 transition-colors">
                 <span className="text-[10px] text-slate-600 w-4 shrink-0">{i + 1}</span>
                 <ScoreDot score={s.opportunity_score} />
                 <span className="text-[11px] text-slate-300 flex-1 truncate">{s.name}</span>
                 <span className="text-[10px] text-slate-500 shrink-0 hidden sm:inline">{s.region}</span>
                 <span className="text-[11px] font-medium text-blue-400 w-12 text-right shrink-0">{s.signal_count} sig</span>
-              </div>
+              </button>
             ))}
           </div>
         </div>
@@ -231,12 +256,12 @@ export default function InsightsPanel() {
           <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-3">🔥 High-Confidence Signal Leaders (30d)</div>
           <div className="flex flex-col gap-2">
             {data.velocityLeaders.map((s, i) => (
-              <div key={s.id} className="flex items-center gap-2">
+              <button key={s.id} onClick={() => onSelectSite(s.id)} className="flex items-center gap-2 w-full text-left hover:bg-[#111118] rounded px-1 transition-colors">
                 <span className="text-[10px] text-slate-600 w-4 shrink-0">{i + 1}</span>
                 <ScoreDot score={s.opportunity_score} />
                 <span className="text-[11px] text-slate-300 flex-1 truncate">{s.name}</span>
                 <span className="text-[11px] font-medium text-green-400 w-16 text-right shrink-0">{s.hc_signals} high-conf</span>
-              </div>
+              </button>
             ))}
           </div>
         </div>

@@ -19,6 +19,7 @@ interface CompanyRow {
 
 interface Props {
   onSelectCompany: (keyword: string) => void;
+  onSelectSite: (id: string) => void;
 }
 
 const SIG_ICON: Record<string, string> = {
@@ -39,7 +40,7 @@ function ScoreBar({ score }: { score: number }) {
   );
 }
 
-export default function CompaniesPanel({ onSelectCompany }: Props) {
+export default function CompaniesPanel({ onSelectCompany, onSelectSite }: Props) {
   const [companies, setCompanies] = useState<CompanyRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState<string | null>(null);
@@ -132,14 +133,18 @@ export default function CompaniesPanel({ onSelectCompany }: Props) {
               {c.topSites.length > 0 && (
                 <div className="mb-3">
                   <div className="text-[10px] text-slate-500 uppercase tracking-wider mb-1.5">Top Sites</div>
-                  <div className="flex flex-col gap-1">
+                  <div className="flex flex-col gap-0.5">
                     {c.topSites.map(s => (
-                      <div key={s.id} className="flex items-center gap-2 text-[11px]">
-                        <span className="text-slate-300 flex-1 truncate">{s.name}</span>
+                      <button
+                        key={s.id}
+                        onClick={() => onSelectSite(s.id)}
+                        className="w-full flex items-center gap-2 text-[11px] py-0.5 px-1 -mx-1 rounded hover:bg-[#1a1a2e] transition-colors text-left group"
+                      >
+                        <span className="text-slate-300 group-hover:text-white flex-1 truncate">{s.name}</span>
                         <span className="text-slate-600 shrink-0">{s.region}</span>
                         <span className="text-slate-400 shrink-0 w-16 text-right">{s.power_capacity_mw} MW</span>
                         <span className="font-medium shrink-0 w-8 text-right" style={{ color: s.opportunity_score >= 80 ? '#22c55e' : '#f59e0b' }}>{s.opportunity_score}</span>
-                      </div>
+                      </button>
                     ))}
                   </div>
                 </div>

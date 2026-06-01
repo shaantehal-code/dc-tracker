@@ -43,6 +43,9 @@ const FEEDS = [
   { url: 'https://seekingalpha.com/tag/data-center.xml',                   label: 'SA-DC' },
   // Patent filings (data center infrastructure)
   { url: 'https://news.google.com/rss/search?q=%22data+center%22+patent+filing+cooling+OR+power+OR+modular+2025&hl=en-US&gl=US&ceid=US:en', label: 'Patents' },
+  // Neocloud / AI infrastructure capacity coverage
+  { url: 'https://news.google.com/rss/search?q=%22Crusoe%22+OR+%22Nebius%22+OR+%22Nscale%22+OR+%22Lambda+Labs%22+data+center+megawatt+OR+gigawatt&hl=en-US&gl=US&ceid=US:en', label: 'GNews-Neocloud' },
+  { url: 'https://news.google.com/rss/search?q=%22CoreWeave%22+OR+%22neocloud%22+data+center+capacity+lease+OR+campus+megawatt&hl=en-US&gl=US&ceid=US:en', label: 'GNews-Neocloud2' },
 ];
 
 // Keywords that boost a news article's relevance to DC acquisition intelligence
