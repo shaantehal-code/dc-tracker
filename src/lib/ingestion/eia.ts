@@ -15,7 +15,7 @@ const EIA_BASE = 'https://api.eia.gov/v2';
 const STATE_SITES: Record<string, string[]> = {
   VA: ['pwc-va','loudoun-va','stafford-va','richmond-va','iron-mountain-nova'],
   OH: ['new-albany-oh','killen-oh'],
-  TX: ['san-antonio-tx','allen-tx','stargate-tx','coreweave-plano','cipher-odessa'],
+  TX: ['san-antonio-tx','allen-tx','stargate-tx','coreweave-plano','cipher-odessa','crusoe-abilene-stargate','crusoe-abilene-microsoft','nscale-cedarvale','coreweave-denton'],
   TN: ['memphis-tn','clarksville-tn','smyrna-tn','xai-memphis'],
   WY: ['cheyenne-wy'],
   WA: ['george-wa','quincy-wa','sabey-quincy','seattle-wa'],
@@ -32,16 +32,16 @@ const STATE_SITES: Record<string, string[]> = {
   OR: ['umatilla-or','hillsboro-or'],
   ID: ['boise-id'],
   NY: ['plattsburgh-ny'],
-  PA: ['homer-city-pa','nuclear-berwick-pa','talen-nuclear-pa'],
+  PA: ['homer-city-pa','nuclear-berwick-pa','talen-nuclear-pa','coreweave-lancaster'],
   MA: ['brayton-point-ma'],
   AL: ['huntsville-al'],
   OK: ['oklahoma-city-ok','google-mayes-ok'],
-  MO: ['kansas-city-mo','stlouis-mo'],
+  MO: ['kansas-city-mo','stlouis-mo','nebius-kansas-city','lambda-kansas-city'],
   WI: ['microsoft-racine'],
   WV: ['monarch-wv'],
   LA: ['meta-louisiana'],
   FL: ['miami-fl'],
-  NJ: ['secaucus-nj'],
+  NJ: ['secaucus-nj','nebius-vineland'],
 };
 
 interface EiaPrice {
