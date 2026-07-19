@@ -138,6 +138,24 @@ export default function Dashboard({ initialSites }: Props) {
     setNewSignalCount(0);
   }
 
+  // Keyboard shortcuts: Esc closes site detail / mobile filters, "/" focuses the search box
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      const el = document.activeElement as HTMLElement | null;
+      const typing = !!el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.tagName === 'SELECT' || el.isContentEditable);
+      if (e.key === 'Escape') {
+        if (selectedId) setSelectedId(null);
+        else if (showMobileFilters) setShowMobileFilters(false);
+      } else if (e.key === '/' && !typing) {
+        const inputs = Array.from(document.querySelectorAll<HTMLInputElement>('input[data-search-input]'));
+        const visible = inputs.find(i => i.offsetParent !== null) ?? inputs[0];
+        if (visible) { e.preventDefault(); visible.focus(); }
+      }
+    }
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [selectedId, showMobileFilters]);
+
   async function seedDb() {
     const res = await fetch('/api/seed');
     const data = await res.json();
@@ -177,6 +195,26 @@ export default function Dashboard({ initialSites }: Props) {
     setSelectedId(id);
     setMobileTab('sites');
   }, []);
+
+  // First-run experience — guide the user to seed an empty database
+  if (sites.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center h-dvh bg-[#0a0a0f] text-slate-200 px-6 text-center">
+        <div className="w-14 h-14 bg-blue-600 rounded-xl flex items-center justify-center text-xl font-bold mb-5 shrink-0">DC</div>
+        <h1 className="text-xl font-bold text-white mb-2">Welcome to DC Tracker</h1>
+        <p className="text-sm text-slate-500 max-w-md mb-6 leading-relaxed">
+          Your database is empty. Seed it with 100+ tracked data center sites, operators,
+          and live market signals to get started.
+        </p>
+        <button
+          onClick={seedDb}
+          className="flex items-center gap-2 px-5 py-2.5 bg-blue-700 hover:bg-blue-600 text-white rounded-lg text-sm font-medium transition-colors"
+        >
+          <Database size={16} /> Seed the database
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col h-dvh bg-[#0a0a0f] text-slate-200 overflow-hidden">

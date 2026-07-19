@@ -19,11 +19,20 @@ body {
   color: var(--text);
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
   margin: 0;
-  height: 100vh;
+  height: 100dvh;
   overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 .leaflet-container { background: #0d0d14; }
+
+/* Pulsing halo on the currently-selected map marker */
+@keyframes markerPulse {
+  0%, 100% { filter: drop-shadow(0 0 2px rgba(96,165,250,0.7)); }
+  50%      { filter: drop-shadow(0 0 9px rgba(96,165,250,1)); }
+}
+.leaflet-interactive.marker-selected { animation: markerPulse 1.6s ease-in-out infinite; }
 
 /* Leaflet popup dark theme */
 .leaflet-popup-content-wrapper {

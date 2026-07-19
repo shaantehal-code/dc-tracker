@@ -27,8 +27,9 @@ export default function FilterPanel({ filters, onChange }: Props) {
     <div className="p-3 border-b border-[#1e1e2e] bg-[#0d0d14] flex flex-col gap-2 shrink-0">
       <div className="flex gap-2">
         <input
+          data-search-input
           className={inp + ' flex-1'}
-          placeholder="Search sites, cities, tags..."
+          placeholder="Search sites, cities, tags…  ( / )"
           value={filters.search}
           onChange={e => onChange({ search: e.target.value })}
         />
