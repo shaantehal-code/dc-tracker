@@ -18,6 +18,7 @@
  */
 import type { RawSignal, SiteStub } from './types';
 import { buildSiteIndex, matchText } from './site-matcher';
+import { yearHint } from './util';
 
 const GNEWS_RSS  = 'https://news.google.com/rss/search';
 const FERC_RSS   = 'https://www.ferc.gov/news-events/news-releases/rss.xml';
@@ -29,13 +30,16 @@ const HIGH_VALUE_TERMS = [
   'utility','data center','hyperscale','load study','power purchase',
 ];
 
-// Per-ISO targeted queries with location guard + deterministic site hints
-const ISO_QUERIES: Array<{
+// Per-ISO targeted queries with location guard + deterministic site hints.
+// Built at runtime so recency-year tokens track the calendar (see yearHint()).
+function buildIsoQueries(): Array<{
   iso: string;
   query: string;
   mustContain: string[];
   siteHints: string[];
-}> = [
+}> {
+  const yh = yearHint();
+  return [
   // ─── PJM: Mid-Atlantic + Midwest ──────────────────────────────────────────
   {
     iso: 'PJM-VA',
@@ -82,7 +86,7 @@ const ISO_QUERIES: Array<{
   },
   {
     iso: 'ERCOT-General',
-    query: 'ERCOT Texas "interconnection queue" OR "large load study" "data center" gigawatt 2025',
+    query: `ERCOT Texas "interconnection queue" OR "large load study" "data center" gigawatt ${yh}`,
     mustContain: ['ercot','texas','interconnection'],
     siteHints: ['san-antonio-tx','allen-tx','stargate-tx','coreweave-plano','cipher-odessa'],
   },
@@ -197,13 +201,13 @@ const ISO_QUERIES: Array<{
   // ─── Broad / Catch-all ────────────────────────────────────────────────────
   {
     iso: 'US-LargeLoad',
-    query: '"large load" "data center" OR "hyperscale" "interconnection" gigawatt utility 2025',
+    query: `"large load" "data center" OR "hyperscale" "interconnection" gigawatt utility ${yh}`,
     mustContain: ['large load','data center','interconnection'],
     siteHints: [],
   },
   {
     iso: 'US-FERC-DC',
-    query: 'FERC "data center" "interconnection" OR "transmission" gigawatt megawatt approved order 2025',
+    query: `FERC "data center" "interconnection" OR "transmission" gigawatt megawatt approved order ${yh}`,
     mustContain: ['ferc','data center','interconnection'],
     siteHints: [],
   },
@@ -226,7 +230,8 @@ const ISO_QUERIES: Array<{
     mustContain: ['hydro-québec','hydro quebec','montreal','vaudreuil','quebec'],
     siteHints: ['montreal-qc'],
   },
-];
+  ];
+}
 
 // Static RSS feeds with official interconnection/grid news
 const STATIC_FEEDS: Array<{ url: string; label: string }> = [
@@ -281,7 +286,7 @@ export async function runIsoQueues(sites: SiteStub[]): Promise<RawSignal[]> {
   const seen     = new Set<string>();
 
   // ── Part 1: ISO-specific Google News RSS queries ───────────────────────────
-  for (const { iso, query, mustContain, siteHints } of ISO_QUERIES) {
+  for (const { iso, query, mustContain, siteHints } of buildIsoQueries()) {
     let xml = '';
     try {
       const url = `${GNEWS_RSS}?q=${encodeURIComponent(query)}&hl=en-US&gl=US&ceid=US:en`;

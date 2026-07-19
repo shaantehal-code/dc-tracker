@@ -5,34 +5,51 @@
  */
 import type { RawSignal, SiteStub } from './types';
 import { buildSiteIndex, matchText } from './site-matcher';
+import { yearHint } from './util';
 
 const GNEWS_RSS = 'https://news.google.com/rss/search';
 
-const EARNINGS_QUERIES = [
-  // Hyperscaler earnings with DC capacity mentions
-  { query: 'Microsoft Azure "data center" megawatt OR gigawatt earnings OR "investor day" OR campus 2025', label: 'MSFT' },
-  { query: 'Amazon AWS "data center" megawatt OR gigawatt earnings OR "capital expenditure" campus 2025', label: 'AMZN' },
-  { query: 'Google Alphabet "data center" megawatt OR gigawatt earnings OR capex campus 2025', label: 'GOOGL' },
-  { query: 'Meta "data center" megawatt OR gigawatt earnings OR "capital expenditure" campus 2025', label: 'META' },
-  { query: 'Nvidia "data center" megawatt OR gigawatt capacity earnings 2025', label: 'NVDA' },
-  { query: 'CoreWeave "data center" megawatt OR gigawatt earnings OR investment campus 2025', label: 'CRWV' },
-  { query: '"Applied Digital" "data center" megawatt OR gigawatt campus earnings 2025', label: 'APLD' },
-  { query: 'xAI "Grok" OR "Colossus" "data center" megawatt OR gigawatt campus expansion 2025', label: 'xAI' },
-  // DC REITs / operators
-  { query: 'Equinix "data center" megawatt campus expansion earnings acquisition 2025', label: 'EQIX' },
-  { query: '"Digital Realty" "data center" megawatt campus expansion earnings 2025', label: 'DLR' },
-  { query: '"Iron Mountain" "data center" megawatt campus expansion earnings 2025', label: 'IRM' },
-  // AI infrastructure announcements
-  { query: '"Project Stargate" OR "Stargate AI" "data center" megawatt OR gigawatt campus 2025', label: 'Stargate' },
-  { query: '"AI campus" OR "AI factory" megawatt OR gigawatt construction investment 2025', label: 'AI-Campus' },
-  { query: 'Crusoe "data center" megawatt OR gigawatt Abilene OR campus AI capacity 2025', label: 'Crusoe' },
-  { query: 'Nebius "data center" megawatt OR gigawatt GPU capacity expansion 2025', label: 'Nebius' },
-  { query: 'Lambda Labs "data center" GPU megawatt OR gigawatt capacity cluster 2025', label: 'Lambda' },
-  { query: 'Nscale "data center" megawatt OR gigawatt GPU capacity Microsoft OR OpenAI 2025', label: 'Nscale' },
-  { query: '"neocloud" OR "GPU cloud" data center megawatt OR gigawatt capacity secured 2025', label: 'Neocloud' },
-  // Earnings transcript aggregators
-  { query: 'site:seekingalpha.com "data center" megawatt gigawatt earnings transcript 2025', label: 'SeekingAlpha' },
-];
+// Built at ingestion time so the recency hint (${yh}) always tracks the calendar.
+function buildEarningsQueries(): { query: string; label: string }[] {
+  const yh = yearHint();
+  return [
+    // Hyperscaler earnings with DC capacity mentions
+    { query: `Microsoft Azure "data center" megawatt OR gigawatt earnings OR "investor day" OR campus ${yh}`, label: 'MSFT' },
+    { query: `Amazon AWS "data center" megawatt OR gigawatt earnings OR "capital expenditure" campus ${yh}`, label: 'AMZN' },
+    { query: `Google Alphabet "data center" megawatt OR gigawatt earnings OR capex campus ${yh}`, label: 'GOOGL' },
+    { query: `Meta "data center" megawatt OR gigawatt earnings OR "capital expenditure" campus ${yh}`, label: 'META' },
+    { query: `Nvidia "data center" megawatt OR gigawatt capacity earnings ${yh}`, label: 'NVDA' },
+    { query: `CoreWeave "data center" megawatt OR gigawatt earnings OR investment campus ${yh}`, label: 'CRWV' },
+    { query: `"Applied Digital" "data center" megawatt OR gigawatt campus earnings ${yh}`, label: 'APLD' },
+    { query: `xAI "Grok" OR "Colossus" "data center" megawatt OR gigawatt campus expansion ${yh}`, label: 'xAI' },
+    // DC REITs / operators
+    { query: `Equinix "data center" megawatt campus expansion earnings acquisition ${yh}`, label: 'EQIX' },
+    { query: `"Digital Realty" "data center" megawatt campus expansion earnings ${yh}`, label: 'DLR' },
+    { query: `"Iron Mountain" "data center" megawatt campus expansion earnings ${yh}`, label: 'IRM' },
+    { query: `"Vantage Data Centers" megawatt OR gigawatt campus expansion investment ${yh}`, label: 'Vantage' },
+    { query: `QTS OR "QTS Realty" "data center" megawatt campus expansion ${yh}`, label: 'QTS' },
+    { query: `"Aligned Data Centers" megawatt OR gigawatt campus expansion ${yh}`, label: 'Aligned' },
+    { query: `Switch OR EdgeConneX "data center" megawatt campus expansion ${yh}`, label: 'Switch/Edge' },
+    { query: `"Stack Infrastructure" data center megawatt campus expansion ${yh}`, label: 'Stack' },
+    { query: `Brookfield OR DigitalBridge "data center" megawatt OR gigawatt investment platform ${yh}`, label: 'Investors' },
+    { query: `Vertiv "data center" megawatt OR gigawatt orders backlog AI ${yh}`, label: 'VRT' },
+    // AI infrastructure announcements
+    { query: `"Project Stargate" OR "Stargate AI" "data center" megawatt OR gigawatt campus ${yh}`, label: 'Stargate' },
+    { query: `"AI campus" OR "AI factory" megawatt OR gigawatt construction investment ${yh}`, label: 'AI-Campus' },
+    { query: `Oracle OCI OR Stargate "data center" megawatt OR gigawatt cloud region expansion ${yh}`, label: 'ORCL' },
+    { query: `OpenAI "data center" OR "compute" gigawatt Stargate OR campus buildout ${yh}`, label: 'OpenAI' },
+    { query: `Anthropic "data center" OR compute cluster gigawatt OR megawatt capacity ${yh}`, label: 'Anthropic' },
+    { query: `Crusoe "data center" megawatt OR gigawatt Abilene OR campus AI capacity ${yh}`, label: 'Crusoe' },
+    { query: `Nebius "data center" megawatt OR gigawatt GPU capacity expansion ${yh}`, label: 'Nebius' },
+    { query: `Lambda Labs "data center" GPU megawatt OR gigawatt capacity cluster ${yh}`, label: 'Lambda' },
+    { query: `Nscale "data center" megawatt OR gigawatt GPU capacity Microsoft OR OpenAI ${yh}`, label: 'Nscale' },
+    { query: `IREN OR TeraWulf "data center" OR HPC megawatt AI hosting ${yh}`, label: 'IREN/WULF' },
+    { query: `"Together AI" OR Fluidstack OR "Together Computer" GPU data center megawatt ${yh}`, label: 'Neocloud2' },
+    { query: `"neocloud" OR "GPU cloud" data center megawatt OR gigawatt capacity secured ${yh}`, label: 'Neocloud' },
+    // Earnings transcript aggregators
+    { query: `site:seekingalpha.com "data center" megawatt gigawatt earnings transcript ${yh}`, label: 'SeekingAlpha' },
+  ];
+}
 
 const HIGH_VALUE_TERMS = [
   'megawatt', 'gigawatt', 'mw', 'gw', 'campus', 'hyperscale', 'capex',
@@ -79,6 +96,7 @@ export async function runEarningsWatch(sites: SiteStub[]): Promise<RawSignal[]> 
   const index = buildSiteIndex(sites);
   const signals: RawSignal[] = [];
   const seen = new Set<string>();
+  const EARNINGS_QUERIES = buildEarningsQueries();
 
   for (const { query, label } of EARNINGS_QUERIES) {
     let xml = '';

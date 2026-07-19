@@ -10,6 +10,7 @@
  */
 import type { RawSignal, SiteStub } from './types';
 import { buildSiteIndex, matchText } from './site-matcher';
+import { yearHint } from './util';
 
 const EIA_BASE = 'https://api.eia.gov/v2';
 
@@ -58,19 +59,22 @@ async function fetchExpandedQueue(apiKey: string): Promise<EiaGen[]> {
 }
 
 // FERC eLibrary — search for recent ER dockets (interconnection rate filings)
-const FERC_GNEWS_QUERIES = [
-  'FERC ER docket interconnection agreement data center 2025',
-  'FERC Order 2023 compliance interconnection queue reform transmission',
-  'FERC large load interconnection request data center campus',
-  'FERC generator interconnection agreement nuclear data center 2025',
-];
+function buildFercGnewsQueries(): string[] {
+  const yh = yearHint();
+  return [
+    `FERC ER docket interconnection agreement data center ${yh}`,
+    'FERC Order 2023 compliance interconnection queue reform transmission',
+    'FERC large load interconnection request data center campus',
+    `FERC generator interconnection agreement nuclear data center ${yh}`,
+  ];
+}
 
 async function fetchFercDocketNews(sites: SiteStub[], index: ReturnType<typeof buildSiteIndex>): Promise<RawSignal[]> {
   const signals: RawSignal[] = [];
   const seenUrl = new Set<string>();
   const today = new Date().toISOString().slice(0, 10);
 
-  for (const query of FERC_GNEWS_QUERIES) {
+  for (const query of buildFercGnewsQueries()) {
     const url = `https://news.google.com/rss/search?q=${encodeURIComponent(query)}&hl=en-US&gl=US&ceid=US:en`;
     try {
       const res = await fetch(url, { signal: AbortSignal.timeout(10000) });

@@ -8,6 +8,7 @@
  */
 import type { RawSignal, SiteStub } from './types';
 import { buildSiteIndex, matchText } from './site-matcher';
+import { yearHint } from './util';
 
 const GNEWS_RSS = 'https://news.google.com/rss/search';
 
@@ -54,25 +55,28 @@ interface GNewsQuery {
   siteHints?: string[]; // if set, pin to these sites; otherwise use site-matcher
 }
 
-const GNEWS_QUERIES: GNewsQuery[] = [
-  // Broad sweep — catch any hiring press release
-  {
-    query: '"data center" "hiring" OR "jobs" OR "workforce" campus megawatt 2025 construction',
-  },
-  // Hyperscaler-specific
-  {
-    query: 'Microsoft "data center" jobs OR hiring Virginia OR Texas OR Ohio 2025',
-  },
-  {
-    query: 'Amazon AWS "data center" jobs OR hiring megawatt campus 2025',
-  },
-  {
-    query: 'Google "data center" jobs OR hiring campus 2025',
-  },
-  {
-    query: 'Meta "data center" jobs OR hiring campus gigawatt 2025',
-  },
-];
+function buildGNewsQueries(): GNewsQuery[] {
+  const yh = yearHint();
+  return [
+    // Broad sweep — catch any hiring press release
+    {
+      query: `"data center" "hiring" OR "jobs" OR "workforce" campus megawatt ${yh} construction`,
+    },
+    // Hyperscaler-specific
+    {
+      query: `Microsoft "data center" jobs OR hiring Virginia OR Texas OR Ohio ${yh}`,
+    },
+    {
+      query: `Amazon AWS "data center" jobs OR hiring megawatt campus ${yh}`,
+    },
+    {
+      query: `Google "data center" jobs OR hiring campus ${yh}`,
+    },
+    {
+      query: `Meta "data center" jobs OR hiring campus gigawatt ${yh}`,
+    },
+  ];
+}
 
 // ---------------------------------------------------------------------------
 // Scoring
@@ -208,7 +212,7 @@ async function runGNewsJobRSS(
   const siteMap = new Map(sites.map(s => [s.id, s]));
   const signals: RawSignal[] = [];
 
-  for (const { query, siteHints } of GNEWS_QUERIES) {
+  for (const { query, siteHints } of buildGNewsQueries()) {
     const url = `${GNEWS_RSS}?q=${encodeURIComponent(query)}&hl=en-US&gl=US&ceid=US:en`;
     let xml = '';
     try {

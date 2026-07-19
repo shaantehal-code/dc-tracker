@@ -20,6 +20,7 @@ const DC_COMPANIES: Record<string, string> = {
   '1626878': 'SWCH',    // Switch Inc (now private)
   // AI/cloud operators
   '1960944': 'CRWV',    // CoreWeave
+  '1731348': 'NBIS',    // Nebius Group
   '1743745': 'APLD',    // Applied Digital
   '1787640': 'CIFR',    // Cipher Mining
   '1839175': 'CORZ',    // Core Scientific
@@ -34,11 +35,18 @@ const DC_COMPANIES: Record<string, string> = {
   '320193':  'AAPL',    // Apple
   '1045810': 'NVDA',    // Nvidia
   '1467858': 'TSLA',    // Tesla (Dojo supercomputer)
-  // Power/utilities
+  '1341439': 'ORCL',    // Oracle (Stargate / OCI)
+  // Power/utilities — grid & nuclear PPAs anchoring DC load
   '78814':   'D',       // Dominion Energy (VA grid)
   '1551152': 'VST',     // Vistra (nuclear power)
   '1013871': 'NRG',     // NRG Energy
   '1168165': 'AEE',     // Ameren (MO/IL)
+  '1868275': 'CEG',     // Constellation Energy (nuclear PPAs — Crane/TMI restart)
+  '753308':  'NEE',     // NextEra Energy
+  '92122':   'SO',      // Southern Company (GA DC load)
+  '4904':    'AEP',     // American Electric Power (OH/TX DC load)
+  '65984':   'ETR',     // Entergy (LA — Meta campus)
+  '1326160': 'DUK',     // Duke Energy (NC/SC/IN)
   // International DC operators
   '1569158': 'GDS',     // GDS Holdings (China)
   '1372514': 'VNET',    // Vnet Group (China)

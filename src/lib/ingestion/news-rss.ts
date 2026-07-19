@@ -5,8 +5,11 @@
  */
 import type { RawSignal, SiteStub } from './types';
 import { buildSiteIndex, matchText } from './site-matcher';
+import { currentYear } from './util';
 
-const FEEDS = [
+function buildFeeds(): { url: string; label: string }[] {
+  const yr = currentYear();
+  return [
   // Core DC trade publications
   { url: 'https://www.datacenterdynamics.com/rss.xml',                    label: 'DCD' },
   { url: 'https://www.theregister.com/data_centre/rss',                   label: 'TheRegister' },
@@ -42,11 +45,19 @@ const FEEDS = [
   // Earnings/investment news
   { url: 'https://seekingalpha.com/tag/data-center.xml',                   label: 'SA-DC' },
   // Patent filings (data center infrastructure)
-  { url: 'https://news.google.com/rss/search?q=%22data+center%22+patent+filing+cooling+OR+power+OR+modular+2025&hl=en-US&gl=US&ceid=US:en', label: 'Patents' },
+  { url: `https://news.google.com/rss/search?q=%22data+center%22+patent+filing+cooling+OR+power+OR+modular+${yr}&hl=en-US&gl=US&ceid=US:en`, label: 'Patents' },
   // Neocloud / AI infrastructure capacity coverage
   { url: 'https://news.google.com/rss/search?q=%22Crusoe%22+OR+%22Nebius%22+OR+%22Nscale%22+OR+%22Lambda+Labs%22+data+center+megawatt+OR+gigawatt&hl=en-US&gl=US&ceid=US:en', label: 'GNews-Neocloud' },
   { url: 'https://news.google.com/rss/search?q=%22CoreWeave%22+OR+%22neocloud%22+data+center+capacity+lease+OR+campus+megawatt&hl=en-US&gl=US&ceid=US:en', label: 'GNews-Neocloud2' },
-];
+  // 2026-current expanded coverage: power, siting risk, and market dynamics
+  { url: 'https://news.google.com/rss/search?q=%22data+center%22+gigawatt+AI+campus+buildout+announced&hl=en-US&gl=US&ceid=US:en', label: 'GNews-Gigawatt' },
+  { url: 'https://news.google.com/rss/search?q=%22data+center%22+nuclear+%22power+purchase%22+OR+SMR+OR+restart+Constellation+OR+%22Three+Mile+Island%22&hl=en-US&gl=US&ceid=US:en', label: 'GNews-Nuclear2' },
+  { url: 'https://news.google.com/rss/search?q=%22data+center%22+%22behind+the+meter%22+OR+%22on-site%22+gas+OR+turbine+power+megawatt&hl=en-US&gl=US&ceid=US:en', label: 'GNews-BTM' },
+  { url: 'https://news.google.com/rss/search?q=%22data+center%22+moratorium+OR+%22grid+constraint%22+OR+%22power+shortage%22+utility&hl=en-US&gl=US&ceid=US:en', label: 'GNews-GridRisk' },
+  { url: 'https://news.google.com/rss/search?q=%22AI+data+center%22+OR+%22sovereign+AI%22+gigawatt+Gulf+OR+India+OR+Europe+OR+Japan+investment&hl=en-US&gl=US&ceid=US:en', label: 'GNews-Sovereign' },
+  { url: 'https://news.google.com/rss/search?q=%22data+center%22+leasing+OR+absorption+OR+%22pre-lease%22+megawatt+vacancy+colocation&hl=en-US&gl=US&ceid=US:en', label: 'GNews-Leasing' },
+  ];
+}
 
 // Keywords that boost a news article's relevance to DC acquisition intelligence
 const HIGH_VALUE_TERMS = [
@@ -113,6 +124,7 @@ async function fetchFeed(url: string): Promise<FeedItem[]> {
 }
 
 export async function runNewsRss(sites: SiteStub[]): Promise<RawSignal[]> {
+  const FEEDS = buildFeeds();
   const index = buildSiteIndex(sites);
   const signals: RawSignal[] = [];
   const seen = new Set<string>();

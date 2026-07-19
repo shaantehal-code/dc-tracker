@@ -4,13 +4,16 @@
  * activity weeks before press coverage reaches mainstream outlets.
  */
 import type { RawSignal, SiteStub, SignalType } from './types';
+import { yearHint } from './util';
 
 const GNEWS_RSS = 'https://news.google.com/rss/search';
 
-const PERMIT_QUERIES: Array<{ query: string; signalType: SignalType; mustContain: string[]; siteHints: string[] }> = [
+function buildPermitQueries(): Array<{ query: string; signalType: SignalType; mustContain: string[]; siteHints: string[] }> {
+  const yh = yearHint();
+  return [
   // --- County building permits ---
   {
-    query: 'Loudoun County Virginia "data center" permit OR construction megawatt 2025',
+    query: `Loudoun County Virginia "data center" permit OR construction megawatt ${yh}`,
     signalType: 'building_permit',
     mustContain: ['loudoun', 'virginia'],
     siteHints: ['loudoun-va', 'pwc-va', 'iron-mountain-nova'],
@@ -157,42 +160,104 @@ const PERMIT_QUERIES: Array<{ query: string; signalType: SignalType; mustContain
   },
   // --- Zoning changes ---
   {
-    query: '"Northern Virginia" OR Loudoun OR "Prince William" "data center" zoning OR rezoning OR variance 2025',
+    query: `"Northern Virginia" OR Loudoun OR "Prince William" "data center" zoning OR rezoning OR variance ${yh}`,
     signalType: 'zoning_change',
     mustContain: ['virginia', 'loudoun', 'prince william', 'zoning'],
     siteHints: ['loudoun-va', 'pwc-va', 'stafford-va'],
   },
   {
-    query: 'Texas "data center" zoning OR rezoning OR variance OR SUP megawatt 2025',
+    query: `Texas "data center" zoning OR rezoning OR variance OR SUP megawatt ${yh}`,
     signalType: 'zoning_change',
     mustContain: ['texas', 'zoning', 'rezoning'],
     siteHints: ['san-antonio-tx', 'allen-tx', 'stargate-tx'],
   },
   {
-    query: 'Arizona Phoenix Chandler "data center" zoning OR rezoning OR variance 2025',
+    query: `Arizona Phoenix Chandler "data center" zoning OR rezoning OR variance ${yh}`,
     signalType: 'zoning_change',
     mustContain: ['arizona', 'zoning', 'phoenix', 'chandler'],
     siteHints: ['phoenix-mesa-az', 'aligned-chandler-az'],
   },
   {
-    query: 'Ohio "New Albany" OR Columbus "data center" zoning OR rezoning OR variance 2025',
+    query: `Ohio "New Albany" OR Columbus "data center" zoning OR rezoning OR variance ${yh}`,
     signalType: 'zoning_change',
     mustContain: ['ohio', 'zoning'],
     siteHints: ['new-albany-oh'],
   },
   {
-    query: 'Nevada Reno Henderson "data center" zoning OR rezoning OR variance 2025',
+    query: `Nevada Reno Henderson "data center" zoning OR rezoning OR variance ${yh}`,
     signalType: 'zoning_change',
     mustContain: ['nevada', 'zoning'],
     siteHints: ['henderson-nv', 'reno-nv'],
   },
   {
-    query: 'Oregon Hillsboro Umatilla "data center" zoning OR rezoning OR variance 2025',
+    query: `Oregon Hillsboro Umatilla "data center" zoning OR rezoning OR variance ${yh}`,
     signalType: 'zoning_change',
     mustContain: ['oregon', 'zoning'],
     siteHints: ['hillsboro-or', 'umatilla-or'],
   },
-];
+  // --- Emerging 2025-2026 data-center hotspots ---
+  {
+    query: `Louisa County OR Spotsylvania Virginia "data center" permit OR rezoning OR special use ${yh}`,
+    signalType: 'building_permit',
+    mustContain: ['louisa', 'spotsylvania', 'virginia'],
+    siteHints: ['stafford-va', 'richmond-va', 'pwc-va'],
+  },
+  {
+    query: `Fauquier OR Culpeper Virginia "data center" permit OR zoning application ${yh}`,
+    signalType: 'building_permit',
+    mustContain: ['fauquier', 'culpeper', 'virginia'],
+    siteHints: ['pwc-va', 'stafford-va'],
+  },
+  {
+    query: `Georgia Fayette OR Coweta OR "Douglas County" "data center" permit OR rezoning ${yh}`,
+    signalType: 'building_permit',
+    mustContain: ['fayette', 'coweta', 'douglas', 'georgia'],
+    siteHints: ['atlanta-douglas-ga'],
+  },
+  {
+    query: `Abilene OR "Taylor County" Texas "data center" permit OR construction megawatt ${yh}`,
+    signalType: 'building_permit',
+    mustContain: ['abilene', 'taylor', 'texas'],
+    siteHints: ['allen-tx', 'stargate-tx'],
+  },
+  {
+    query: `Ellis County OR Kaufman Texas "data center" permit OR rezoning ${yh}`,
+    signalType: 'building_permit',
+    mustContain: ['ellis', 'kaufman', 'texas'],
+    siteHints: ['allen-tx'],
+  },
+  {
+    query: `Arizona Maricopa OR Pinal "data center" permit OR rezoning OR use permit ${yh}`,
+    signalType: 'building_permit',
+    mustContain: ['maricopa', 'pinal', 'arizona'],
+    siteHints: ['phoenix-mesa-az', 'goodyear-az'],
+  },
+  {
+    query: `Cheyenne OR "Laramie County" Wyoming "data center" permit OR construction ${yh}`,
+    signalType: 'building_permit',
+    mustContain: ['cheyenne', 'laramie', 'wyoming'],
+    siteHints: ['cheyenne-wy'],
+  },
+  {
+    query: `"Kansas City" OR "Jackson County" Missouri "data center" permit OR rezoning ${yh}`,
+    signalType: 'building_permit',
+    mustContain: ['kansas city', 'jackson county', 'missouri'],
+    siteHints: ['kansas-city-mo'],
+  },
+  {
+    query: `Iowa "data center" "Council Bluffs" OR Altoona OR "Story County" permit OR rezoning ${yh}`,
+    signalType: 'building_permit',
+    mustContain: ['council bluffs', 'altoona', 'story county', 'iowa'],
+    siteHints: ['waukee-ia'],
+  },
+  {
+    query: `Wisconsin "Mount Pleasant" OR Racine "data center" permit OR construction megawatt ${yh}`,
+    signalType: 'building_permit',
+    mustContain: ['mount pleasant', 'racine', 'wisconsin'],
+    siteHints: ['dekalb-il'],
+  },
+  ];
+}
 
 const HIGH_VALUE_TERMS = [
   'permit', 'zoning', 'variance', 'rezoning', 'construction', 'megawatt', 'gigawatt',
@@ -236,7 +301,9 @@ export async function runPermitTracker(sites: SiteStub[]): Promise<RawSignal[]> 
   const signals: RawSignal[] = [];
   const seen = new Set<string>();
 
-  for (const { query, signalType, mustContain, siteHints } of PERMIT_QUERIES) {
+  const permitQueries = buildPermitQueries();
+
+  for (const { query, signalType, mustContain, siteHints } of permitQueries) {
     let xml = '';
     try {
       const url = `${GNEWS_RSS}?q=${encodeURIComponent(query)}&hl=en-US&gl=US&ceid=US:en`;

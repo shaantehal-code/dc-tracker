@@ -7,6 +7,7 @@
  */
 import type { RawSignal, SiteStub } from './types';
 import { buildSiteIndex, matchText } from './site-matcher';
+import { yearHint } from './util';
 
 const FERC_RSS = 'https://www.ferc.gov/node/feed.xml';
 
@@ -17,13 +18,16 @@ const HIGH_VALUE = [
   'capacity', 'gigawatt', 'megawatt', 'substation', 'load growth',
 ];
 
-const GNEWS_QUERIES = [
-  'FERC Order 2023 interconnection reform transmission 2025',
-  'FERC large load interconnection data center utility agreement',
-  'FERC ER docket interconnection agreement approved 2025',
-  'FERC meeting order transmission data center hyperscaler',
-  'FERC interconnection queue reform PJM MISO ERCOT 2025',
-];
+function buildGnewsQueries(): string[] {
+  const yh = yearHint();
+  return [
+    `FERC Order 2023 interconnection reform transmission ${yh}`,
+    'FERC large load interconnection data center utility agreement',
+    `FERC ER docket interconnection agreement approved ${yh}`,
+    'FERC meeting order transmission data center hyperscaler',
+    `FERC interconnection queue reform PJM MISO ERCOT ${yh}`,
+  ];
+}
 
 function scoreItem(title: string, desc: string): number {
   const text = `${title} ${desc}`.toLowerCase();
@@ -82,7 +86,7 @@ async function fetchFercGNews(sites: SiteStub[], index: ReturnType<typeof buildS
   const signals: RawSignal[] = [];
   const seen = new Set<string>();
 
-  for (const query of GNEWS_QUERIES) {
+  for (const query of buildGnewsQueries()) {
     const url = `https://news.google.com/rss/search?q=${encodeURIComponent(query)}&hl=en-US&gl=US&ceid=US:en`;
     try {
       const res = await fetch(url, { signal: AbortSignal.timeout(10000) });
