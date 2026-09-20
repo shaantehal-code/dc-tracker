@@ -1,16 +1,25 @@
 /**
- * ISO Queue CSV/API Ingestion — fetches generator interconnection queue data
- * directly from PJM, MISO, SPP (CSV downloads) and ERCOT (JSON API).
+ * ISO Queue Interconnection Ingestion.
  *
- * Each row = a queued project ≥200 MW → matched to DC Tracker sites via
- * site-matcher → generates high-confidence interconnection_request signals
- * with queue position, ISO, MW, fuel type, and county/state.
+ * Endpoint reality (verified 2026-09):
+ *   • SPP   — LIVE. Public CSV at opsportal.spp.org (parsed below).
+ *   • PJM   — the old public bulk CSV was discontinued; queue data now lives
+ *             behind Data Miner 2 (requires a free Ocp-Apim subscription key).
+ *             Opt-in via PJM_DATAMINER_API_KEY; skipped cleanly otherwise.
+ *   • ERCOT — no public JSON/CSV feed; the GIS queue is an Excel report inside
+ *             the ERCOT MIS. Not fetchable as CSV, so skipped (documented stub).
+ *   • MISO  — official JSON API exists but sits behind a Cloudflare bot
+ *             challenge; attempted best-effort, degrades gracefully on 403.
  *
- * Skips solar/wind/PV (utility-scale generation, not DC load).
- * Falls back gracefully if any ISO source is unavailable.
+ * Each queue row ≥200 MW is matched to DC Tracker sites via the site-matcher and
+ * emitted as an interconnection_request signal (MW, fuel, county/state, status).
+ * Utility-scale solar/wind is skipped (generation, not dedicated DC load).
+ * Every fetch fails closed (returns []), so a dead ISO never breaks the run.
  */
 import type { RawSignal, SiteStub } from './types';
 import { buildSiteIndex, matchText } from './site-matcher';
+
+const UA = 'Mozilla/5.0 (compatible; dc-tracker-intelligence/1.0; +contact@dctracker.io)';
 
 interface QueueRow {
   projectName: string;
@@ -40,8 +49,11 @@ function parseCSVLine(line: string): string[] {
   return result;
 }
 
-function parseCSV(text: string): Record<string, string>[] {
-  const lines = text.split('\n').filter(l => l.trim());
+/** Parse CSV to row objects with normalized (snake_case) header keys.
+ *  `skipLeading` regex drops a metadata preamble line (e.g. SPP's "Last Updated On"). */
+function parseCSV(text: string, skipLeading?: RegExp): Record<string, string>[] {
+  let lines = text.split('\n').filter(l => l.trim());
+  if (skipLeading && lines.length && skipLeading.test(lines[0])) lines = lines.slice(1);
   if (lines.length < 2) return [];
   const headers = parseCSVLine(lines[0]).map(h =>
     h.toLowerCase().replace(/[^a-z0-9]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '')
@@ -57,6 +69,7 @@ function parseCSV(text: string): Record<string, string>[] {
 function extractMW(row: Record<string, string>): number {
   const candidates = [
     'mw', 'nameplate_mw', 'mw_in_service', 'capacity_mw', 'nameplate_capacity',
+    'capacity', 'max_summer_mw', 'max_winter_mw',
     'mw_capacity', 'service_mw', 'request_mw', 'summer_capacity_mw', 'winter_capacity_mw',
   ];
   for (const k of candidates) {
@@ -94,113 +107,96 @@ function isLoadTech(fuel: string): boolean {
 
 // ── Per-ISO fetchers ──────────────────────────────────────────────────────────
 
-async function fetchPjm(): Promise<QueueRow[]> {
-  try {
-    const res = await fetch(
-      'https://pjm.com/pub/planning/intercon_queues/active.csv',
-      { signal: AbortSignal.timeout(30000) }
-    );
-    if (!res.ok) return [];
-    const text = await res.text();
-    if (!text.includes(',')) return [];
-    return parseCSV(text).map(r => ({
-      projectName: pick(r, 'project_name', 'name', 'project'),
-      mw: extractMW(r),
-      state: pick(r, 'state', 'states', 'gen_state'),
-      county: pick(r, 'county', 'counties', 'location', 'gen_county'),
-      fuel: pick(r, 'fuel', 'fuel_type', 'type', 'generation_type'),
-      status: pick(r, 'status', 'project_status', 'queue_status'),
-      queueDate: pick(r, 'request_received', 'queue_date', 'received_date', 'date_received'),
-      queuePosition: pick(r, 'queue_pos', 'queue_position', 'pos', 'queue_no', 'project_number'),
-      iso: 'PJM',
-    })).filter(r => r.mw >= 200);
-  } catch { return []; }
-}
-
-async function fetchMiso(): Promise<QueueRow[]> {
-  // MISO publishes its GI queue CSV through their ECM document system
-  const urls = [
-    'https://www.misoenergy.org/_layouts/MISO/ECM/Redirect.aspx?id=301038',
-    'https://www.misoenergy.org/_layouts/MISO/ECM/Redirect.aspx?id=295870',
-  ];
-  for (const url of urls) {
-    try {
-      const res = await fetch(url, { signal: AbortSignal.timeout(30000), redirect: 'follow' });
-      if (!res.ok) continue;
-      const text = await res.text();
-      if (!text.includes(',') || text.trim().startsWith('<')) continue;
-      const rows = parseCSV(text).map(r => ({
-        projectName: pick(r, 'project_name', 'name', 'gen_name', 'generator_name'),
-        mw: extractMW(r),
-        state: pick(r, 'state', 'gen_state', 'interconnection_state'),
-        county: pick(r, 'county', 'gen_county', 'interconnection_county'),
-        fuel: pick(r, 'fuel_type', 'fuel', 'technology', 'generation_type'),
-        status: pick(r, 'queue_status', 'status', 'study_phase'),
-        queueDate: pick(r, 'queue_date', 'received', 'request_date', 'date_received'),
-        queuePosition: pick(r, 'queue_id', 'queue_pos', 'id', 'project_id'),
-        iso: 'MISO',
-      })).filter(r => r.mw >= 200);
-      if (rows.length > 0) return rows;
-    } catch { continue; }
-  }
-  return [];
-}
-
+/** SPP — LIVE public CSV. First line is a "Last Updated On" metadata row. */
 async function fetchSpp(): Promise<QueueRow[]> {
   try {
     const res = await fetch(
-      'https://www.spp.org/documents/64289/generator%20interconnection%20queue.csv',
-      { signal: AbortSignal.timeout(30000) }
+      'https://opsportal.spp.org/Studies/GenerateActiveCSV',
+      { signal: AbortSignal.timeout(30000), headers: { 'User-Agent': UA } }
     );
     if (!res.ok) return [];
     const text = await res.text();
     if (!text.includes(',')) return [];
-    return parseCSV(text).map(r => ({
-      projectName: pick(r, 'project_name', 'name', 'application_name', 'gen_name'),
+    return parseCSV(text, /last updated on/i).map(r => ({
+      projectName: pick(r, 'generation_interconnection_number', 'ifs_queue_number'),
       mw: extractMW(r),
-      state: pick(r, 'state', 'gen_state', 'location_state'),
-      county: pick(r, 'county', 'gen_county', 'location_county'),
-      fuel: pick(r, 'fuel_type', 'fuel', 'generation_type', 'resource_type'),
-      status: pick(r, 'status', 'queue_status', 'study_status'),
-      queueDate: pick(r, 'queue_date', 'received_date', 'request_date', 'date_received'),
-      queuePosition: pick(r, 'serial_no', 'queue_id', 'queue_pos', 'number', 'id'),
+      state: pick(r, 'state'),
+      county: pick(r, 'nearest_town_or_county'),
+      fuel: pick(r, 'fuel_type', 'generation_type'),
+      status: pick(r, 'status'),
+      queueDate: pick(r, 'request_received', 'in_service_date'),
+      queuePosition: pick(r, 'generation_interconnection_number', 'ifs_queue_number'),
       iso: 'SPP',
     })).filter(r => r.mw >= 200);
   } catch { return []; }
 }
 
-async function fetchErcot(): Promise<QueueRow[]> {
-  // ERCOT publishes GI status as a JSON dashboard endpoint
+/** MISO — official JSON API, but Cloudflare-gated. Best-effort; graceful on 403. */
+async function fetchMiso(): Promise<QueueRow[]> {
   try {
     const res = await fetch(
-      'https://www.ercot.com/api/1/services/read/dashboards/generator-interconnection-status.json',
-      { signal: AbortSignal.timeout(20000) }
+      'https://www.misoenergy.org/api/giqueue/getprojects',
+      { signal: AbortSignal.timeout(20000), headers: { 'User-Agent': UA, 'Accept': 'application/json' } }
     );
     if (!res.ok) return [];
+    const ct = res.headers.get('content-type') || '';
+    if (!ct.includes('json')) return []; // Cloudflare challenge returns HTML
     const json = await res.json() as any;
-    const items: any[] = Array.isArray(json) ? json
-      : (json.data ?? json.items ?? json.results ?? json.rows ?? []);
-    return items.map(r => ({
-      projectName: r.projectName ?? r.name ?? r.gen_name ?? r.generatorName ?? '',
-      mw: parseFloat(r.mw ?? r.nameplateMW ?? r.capacity ?? r.MW ?? r.requestedMW ?? '0') || 0,
-      state: 'TX',
-      county: r.county ?? r.location ?? r.countyName ?? '',
-      fuel: r.fuelType ?? r.fuel ?? r.technology ?? r.resourceType ?? '',
-      status: r.status ?? r.queueStatus ?? r.studyPhase ?? '',
-      queueDate: r.queueDate ?? r.receivedDate ?? r.requestDate ?? '',
-      queuePosition: String(r.inr ?? r.queuePos ?? r.id ?? r.projectId ?? ''),
-      iso: 'ERCOT',
-    })).filter(r => r.mw >= 200);
+    const items: any[] = Array.isArray(json) ? json : (json.projects ?? json.data ?? json.items ?? []);
+    return items.map((r: any) => ({
+      projectName: String(r.queueNumber ?? r.projectNumber ?? r.projectName ?? r.name ?? ''),
+      mw: parseFloat(r.summerMW ?? r.netMW ?? r.nameplateMW ?? r.capacity ?? r.mw ?? '0') || 0,
+      state: r.state ?? r.stateProvince ?? '',
+      county: r.county ?? r.countyName ?? '',
+      fuel: r.fuelType ?? r.fuel ?? r.technology ?? r.generationType ?? '',
+      status: r.applicationStatus ?? r.studyPhase ?? r.status ?? '',
+      queueDate: r.queueDate ?? r.requestDate ?? r.receivedDate ?? '',
+      queuePosition: String(r.queueNumber ?? r.projectNumber ?? ''),
+      iso: 'MISO',
+    })).filter((r: QueueRow) => r.mw >= 200);
   } catch { return []; }
 }
 
-// ── Source URL per ISO ────────────────────────────────────────────────────────
+/** PJM — opt-in via Data Miner 2 (free subscription key). Skipped without a key. */
+async function fetchPjm(): Promise<QueueRow[]> {
+  const key = process.env.PJM_DATAMINER_API_KEY;
+  if (!key) return []; // public bulk CSV discontinued; requires Data Miner 2 key
+  try {
+    const res = await fetch(
+      'https://api.pjm.com/api/v1/serviced_requests?rowCount=50000&startRow=1',
+      { signal: AbortSignal.timeout(30000), headers: { 'Ocp-Apim-Subscription-Key': key, 'Accept': 'application/json' } }
+    );
+    if (!res.ok) return [];
+    const json = await res.json() as any;
+    const items: any[] = json.items ?? json.data ?? (Array.isArray(json) ? json : []);
+    return items.map((r: any) => ({
+      projectName: String(r.projectName ?? r.name ?? r.queueNumber ?? ''),
+      mw: parseFloat(r.mwCapacity ?? r.mwEnergy ?? r.mwInService ?? r.nameplateMW ?? r.mw ?? '0') || 0,
+      state: r.state ?? '',
+      county: r.county ?? '',
+      fuel: r.fuel ?? r.fuelType ?? '',
+      status: r.status ?? r.projectStatus ?? '',
+      queueDate: r.submittedDate ?? r.queueDate ?? '',
+      queuePosition: String(r.queueNumber ?? r.queueEntity ?? ''),
+      iso: 'PJM',
+    })).filter((r: QueueRow) => r.mw >= 200);
+  } catch { return []; }
+}
+
+/** ERCOT — no public CSV/JSON queue feed (GIS report is Excel inside the MIS).
+ *  Interconnection coverage for Texas comes via the EIA-860M source and news
+ *  feeds instead. Documented stub; returns nothing rather than a dead request. */
+async function fetchErcot(): Promise<QueueRow[]> {
+  return [];
+}
+
+// ── Human-facing source landing pages (for signal sourceUrl) ───────────────────
 
 const ISO_SOURCE_URL: Record<string, string> = {
-  PJM:   'https://pjm.com/planning/project-queues/interconnection-queue',
-  MISO:  'https://www.misoenergy.org/planning/interconnection-and-reliability-studies/gi_queue/',
+  PJM:   'https://www.pjm.com/planning/services-requests/interconnection-queues',
+  MISO:  'https://www.misoenergy.org/planning/generator-interconnection/GI_Queue/',
   SPP:   'https://www.spp.org/engineering/generator-interconnection/',
-  ERCOT: 'https://www.ercot.com/gridinfo/connect',
+  ERCOT: 'https://www.ercot.com/gridinfo/resource',
 };
 
 // ── Main export ───────────────────────────────────────────────────────────────
@@ -231,7 +227,7 @@ export async function runIsoQueueCsv(sites: SiteStub[]): Promise<RawSignal[]> {
     const matched = matchText(matchStr, index, 3);
     if (matched.length === 0) continue;
 
-    const location = row.county ? `${row.county} County, ${row.state}` : row.state;
+    const location = row.county ? `${row.county}, ${row.state}` : row.state;
     const posStr = row.queuePosition ? ` [#${row.queuePosition}]` : '';
     const fuelStr = row.fuel ? ` — ${row.fuel}` : '';
     const statusStr = row.status ? ` (${row.status})` : '';

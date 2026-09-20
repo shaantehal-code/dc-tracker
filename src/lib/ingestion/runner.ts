@@ -79,7 +79,7 @@ export const SOURCES: Record<string, {
   },
   iso_queue_csv: {
     label: 'ISO Queue (CSV/API)',
-    desc: 'Direct PJM, MISO, SPP queue CSVs + ERCOT JSON API — queue position, MW, county, fuel',
+    desc: 'SPP live queue CSV (PJM via Data Miner key; MISO best-effort) — queue position, MW, county, fuel',
     run: runIsoQueueCsv,
   },
 };
